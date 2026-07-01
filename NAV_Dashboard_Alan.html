@@ -1,0 +1,1149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PLF Deployment Wallet — NAV</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Segoe UI',system-ui,Arial,sans-serif;background:#f4f6f9;color:#111827;padding:28px;min-height:100vh}
+
+    /* Header */
+    .hdr{background:linear-gradient(135deg,#0f172a 0%,#1e3a5f 100%);color:#fff;padding:22px 28px;border-radius:14px;margin-bottom:22px;display:flex;justify-content:space-between;align-items:center}
+    .hdr-left h1{font-size:20px;font-weight:700;letter-spacing:-.3px}
+    .hdr-left .sub{font-size:11px;color:#94a3b8;font-family:'Courier New',monospace;margin-top:4px}
+    .hdr-right{display:flex;align-items:center;gap:14px}
+    .ts{font-size:11px;color:#94a3b8;text-align:right;line-height:1.5}
+    .btn{background:#3b82f6;color:#fff;border:none;padding:8px 18px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;letter-spacing:.2px;transition:background .15s}
+    .btn:hover:not(:disabled){background:#2563eb}
+    .btn:disabled{background:#60a5fa;cursor:not-allowed}
+
+    /* Summary cards */
+    .cards{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:22px}
+    .card{background:#fff;border-radius:12px;padding:18px 20px;box-shadow:0 1px 3px rgba(0,0,0,.07),0 1px 2px rgba(0,0,0,.04)}
+    .card-lbl{font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:.6px;margin-bottom:7px;font-weight:500}
+    .card-val{font-size:24px;font-weight:700;line-height:1;color:#111827}
+    .card-val.primary{color:#1d4ed8;font-size:28px}
+    .card-sub{font-size:11px;color:#9ca3af;margin-top:6px}
+
+    /* Protocol sections */
+    .sec{background:#fff;border-radius:12px;padding:20px 24px;margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,.07),0 1px 2px rgba(0,0,0,.04)}
+    .sec-hdr{display:flex;align-items:center;gap:10px;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid #f3f4f6}
+    .sec-ttl{font-size:15px;font-weight:700;color:#111827}
+    .chip{font-size:10px;padding:3px 9px;border-radius:20px;font-weight:600;letter-spacing:.3px}
+    .chip-base{background:#dbeafe;color:#1d4ed8}
+    .chip-eth{background:#ede9fe;color:#6d28d9}
+    .sec-nav{margin-left:auto;font-size:16px;font-weight:700;color:#1d4ed8}
+
+    /* Table */
+    table{width:100%;border-collapse:collapse;font-size:13px}
+    th{text-align:left;padding:0 10px 10px;color:#9ca3af;font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:.4px}
+    th.r,td.r{text-align:right}
+    td{padding:11px 10px;border-top:1px solid #f9fafb;vertical-align:middle}
+    tr:first-child td{border-top:none}
+    tr:hover td{background:#fafafa}
+
+    .token-name{font-weight:700;font-size:13px;color:#111827}
+    .addr{font-family:'Courier New',monospace;font-size:11px;color:#9ca3af;text-decoration:none}
+    .addr:hover{color:#3b82f6}
+    .nav-val{font-weight:700;color:#1d4ed8;font-size:14px}
+    .dim{color:#d1d5db}
+
+    .tag{display:inline-flex;align-items:center;gap:4px;font-size:10px;padding:3px 9px;border-radius:20px;font-weight:600}
+    .t-green{background:#d1fae5;color:#065f46}
+    .t-orange{background:#ffedd5;color:#9a3412}
+    .t-gray{background:#f3f4f6;color:#6b7280}
+    .t-blue{background:#dbeafe;color:#1e40af}
+
+    /* Dot indicator */
+    .dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:5px}
+    .dot-green{background:#10b981}
+    .dot-amber{background:#f59e0b}
+    .dot-gray{background:#d1d5db}
+
+    /* Notice boxes */
+    .notice{margin-top:14px;padding:10px 14px;border-radius:8px;font-size:12px;line-height:1.6;display:flex;gap:10px;align-items:flex-start}
+    .n-amber{background:#fffbeb;border:1px solid #fde68a;color:#78350f}
+    .n-blue{background:#eff6ff;border:1px solid #bfdbfe;color:#1e3a5f}
+    .n-green{background:#f0fdf4;border:1px solid #bbf7d0;color:#14532d}
+    .t-blue{background:#dbeafe;color:#1e40af}
+    .t-purple{background:#ede9fe;color:#5b21b6}
+    .n-icon{font-size:14px;flex-shrink:0;margin-top:1px}
+
+    .ttl-row td{background:#f8faff;font-weight:700;font-size:13px;border-top:2px solid #e0e7ff!important;padding:12px 10px;color:#1d4ed8}
+
+    .loading{color:#d1d5db;font-size:13px;padding:20px 10px;font-style:italic}
+    .err{color:#ef4444;font-size:12px;padding:12px 10px}
+
+    /* Footer */
+    .footer{margin-top:20px;text-align:center;font-size:11px;color:#d1d5db}
+    a{color:inherit}
+
+    /* Wallet Activity */
+    .act-filters{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .act-filter{font-size:11px;padding:4px 10px;border-radius:20px;border:1px solid #e5e7eb;background:#f9fafb;cursor:pointer;color:#6b7280;transition:all .15s}
+    .act-filter.active{background:#1d4ed8;border-color:#1d4ed8;color:#fff}
+    .act-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:12px}
+    .act-table th{text-align:left;padding:7px 10px;font-size:10px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;border-bottom:2px solid #f3f4f6}
+    .act-table td{padding:8px 10px;border-bottom:1px solid #f3f4f6;vertical-align:middle}
+    .act-table tr:last-child td{border-bottom:none}
+    .act-table tr:hover td{background:#f8faff}
+    .dir-in{display:inline-flex;align-items:center;gap:4px;background:#f0fdf4;color:#059669;font-weight:700;font-size:11px;padding:2px 8px;border-radius:12px}
+    .dir-out{display:inline-flex;align-items:center;gap:4px;background:#fff7ed;color:#ea580c;font-weight:700;font-size:11px;padding:2px 8px;border-radius:12px}
+    .tok-known{font-weight:600;color:#1d4ed8}
+    .tok-unknown{font-weight:500;color:#9ca3af}
+    .act-chain{font-size:10px;padding:2px 6px;border-radius:4px;font-weight:600}
+    .act-base{background:#dbeafe;color:#1e40af}
+    .act-eth{background:#ede9fe;color:#5b21b6}
+    .act-amt{font-weight:600;font-variant-numeric:tabular-nums}
+    .act-date{color:#6b7280;white-space:nowrap;font-size:11px}
+    .act-hash a{color:#3b82f6;font-family:'Courier New',monospace;font-size:10px}
+    .act-count{font-size:11px;color:#9ca3af;margin-top:8px;text-align:center}
+  </style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-left">
+    <h1>PLF Deployment Wallet — Live NAV</h1>
+    <div class="sub">0x4f5D9D62b17e2A5773e28CdF068D211FB5a0cc8C</div>
+  </div>
+  <div class="hdr-right">
+    <div class="ts" id="ts">—</div>
+    <button class="btn" id="btn" onclick="run()">↻ Refresh</button>
+  </div>
+</div>
+
+<!-- Summary cards -->
+<div class="cards">
+  <div class="card">
+    <div class="card-lbl">Total NAV</div>
+    <div class="card-val primary" id="c-total">—</div>
+    <div class="card-sub">Wallet-held positions</div>
+  </div>
+  <div class="card">
+    <div class="card-lbl">Yieldpoint · yUTY</div>
+    <div class="card-val" id="c-yp">—</div>
+    <div class="card-sub" id="c-yp-sub">APY: —</div>
+  </div>
+  <div class="card">
+    <div class="card-lbl">Ample Money · All M31</div>
+    <div class="card-val" id="c-am">—</div>
+    <div class="card-sub" id="c-am-sub">—</div>
+  </div>
+  <div class="card">
+    <div class="card-lbl">InfiniFi</div>
+    <div class="card-val" id="c-inf">—</div>
+    <div class="card-sub" id="c-inf-sub">siUSD + liUSD</div>
+  </div>
+  <div class="card">
+    <div class="card-lbl">Stablecoins</div>
+    <div class="card-val" id="c-stbl">—</div>
+    <div class="card-sub" id="c-stbl-sub">USDC · USDT</div>
+  </div>
+</div>
+
+<!-- Yieldpoint -->
+<div class="sec">
+  <div class="sec-hdr">
+    <span class="sec-ttl">Yieldpoint</span>
+    <span class="chip chip-base">Base</span>
+    <span class="sec-nav" id="yp-nav">—</span>
+  </div>
+  <table>
+    <thead><tr>
+      <th>Token</th><th>Contract</th>
+      <th class="r">Balance</th><th class="r">Rate (USDC/token)</th><th class="r">NAV</th><th>Status</th>
+    </tr></thead>
+    <tbody id="yp-body"><tr><td colspan="6" class="loading">Loading…</td></tr></tbody>
+  </table>
+</div>
+
+<!-- Ample Money -->
+<div class="sec">
+  <div class="sec-hdr">
+    <span class="sec-ttl">Ample Money</span>
+    <span class="chip chip-base">Base</span>
+    <span class="sec-nav" id="am-nav">—</span>
+  </div>
+
+  <!-- PLF wallet position (NAV) -->
+  <table>
+    <thead><tr>
+      <th>Token</th><th>Contract (PLF Wallet)</th>
+      <th class="r">Balance</th><th class="r">Rate (USDC/token)</th><th class="r">NAV</th><th>Status</th>
+    </tr></thead>
+    <tbody id="am-body"><tr><td colspan="6" class="loading">Loading…</td></tr></tbody>
+  </table>
+
+  <!-- Yield accrual (PLF wallet Deal #2) -->
+  <div id="am-notice"></div>
+
+  <!-- Full deal overview (all M31 vehicles) -->
+  <div style="margin-top:18px">
+    <div style="font-size:12px;font-weight:700;color:#374151;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">
+      Full Deal Overview — All M31 Vehicles
+    </div>
+    <div id="am-deal-body"><div class="loading" style="padding:16px 0">Loading deal data…</div></div>
+  </div>
+</div>
+
+<!-- InfiniFi -->
+<div class="sec">
+  <div class="sec-hdr">
+    <span class="sec-ttl">InfiniFi</span>
+    <span class="chip chip-eth">Ethereum</span>
+    <span class="sec-nav" id="inf-nav">—</span>
+  </div>
+  <table>
+    <thead><tr>
+      <th>Token</th><th>Contract</th>
+      <th class="r">Balance</th><th class="r">Rate (USDC/token)</th><th class="r">NAV</th><th>Status</th>
+    </tr></thead>
+    <tbody id="inf-body"><tr><td colspan="6" class="loading">Loading…</td></tr></tbody>
+  </table>
+  <div id="inf-notice"></div>
+</div>
+
+<!-- Stablecoins -->
+<div class="sec">
+  <div class="sec-hdr">
+    <span class="sec-ttl">Stablecoins</span>
+    <span class="chip chip-base">Base</span>
+    <span class="chip chip-eth">Ethereum</span>
+    <span class="sec-nav" id="stbl-nav">—</span>
+  </div>
+  <table>
+    <thead><tr>
+      <th>Token</th><th>Contract</th>
+      <th class="r">Balance</th><th class="r">Rate (USDC/token)</th><th class="r">NAV</th><th>Status</th>
+    </tr></thead>
+    <tbody id="stbl-body"><tr><td colspan="6" class="loading">Loading…</td></tr></tbody>
+  </table>
+</div>
+
+<!-- Wallet Activity -->
+<div class="sec">
+  <div class="sec-hdr" style="flex-wrap:wrap;gap:10px">
+    <span class="sec-ttl">Wallet Activity</span>
+    <div class="act-filters">
+      <span class="act-filter active" onclick="actFilter(this,'all')">All</span>
+      <span class="act-filter" onclick="actFilter(this,'in')">↓ Received</span>
+      <span class="act-filter" onclick="actFilter(this,'out')">↑ Sent</span>
+      <span class="act-filter" onclick="actFilter(this,'base')">Base</span>
+      <span class="act-filter" onclick="actFilter(this,'eth')">Ethereum</span>
+    </div>
+    <span style="font-size:11px;color:#9ca3af;margin-left:auto" id="act-range">Last 30 days</span>
+  </div>
+  <div id="act-body"><div class="loading" style="padding:28px 10px">Scanning wallet transactions…</div></div>
+</div>
+
+<div class="footer">Data sourced live from Base and Ethereum mainnet · yUTY rate via Yieldpoint API · liUSD rates via LockingController on-chain</div>
+
+<script>
+'use strict';
+
+const WALLET    = '0x4f5D9D62b17e2A5773e28CdF068D211FB5a0cc8C';
+const BASE_RPCS = ['https://base.publicnode.com','https://base-mainnet.public.blastapi.io','https://base.drpc.org','https://mainnet.base.org'];
+const ETH_RPCS  = ['https://ethereum.publicnode.com','https://rpc.mevblocker.io','https://eth.drpc.org','https://endpoints.omniatech.io/v1/eth/mainnet/public'];
+const YP_API    = 'https://api.yieldpoint.io/v1';
+
+const ADDR = {
+  yUTY    : '0xBa515EEd0119aCB7CFE8fAb3ACD6b362f3ed5319',
+  abUSDC  : '0x1688aEB3Ec7b23A22e2418fdF5BCCc67EcF39c0F',
+  usdcBase: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
+  siUSD   : '0xDBDC1Ef57537E34680B898E1FEBD3D68c7389bCB',
+  liUSD2w : '0xf1839BeCaF586814D022F16cDb3504ff8D8Ff361',
+  liUSD4w : '0x66bCF6151D5558AfB47c38B20663589843156078',
+  liUSD13w: '0xbd3f9814eB946E617f1d774A6762cDbec0bf087A',
+  iUSD    : '0x48f9e38f3070AD8945DFEae3FA70987722E3D89c',
+  usdtEth : '0xdAC17F958D2ee523a2206206994597C13D831ec7',
+  usdcEth : '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', // USDC on Ethereum (Ample payments land here)
+};
+
+// ── Ample Private Deal Wallets (all M31 vehicles) ─────────────────────────
+// Source: Ample Payments PDFs (April & June 2026)
+// Deal #2 (10% p.a. USDC + TTS): three wallets
+// Deal #1 (20% p.a. USDC only):  one wallet
+const AMPLE_WALLETS = {
+  deal2: [
+    { label:'Vehicle 1 ★ (PLF)',   wallet: WALLET,                                       depositRef: 1_010_397.00 },
+    { label:'Vehicle 2',           wallet:'0x9a1AE3e06aCbe83affF4CFA4421ecEd7CDC90184', depositRef:   259_973.90 },
+    { label:'Vehicle 2',           wallet:'0xE9Da68d9636284f1f41255E84068aed0767EaCEf', depositRef:   738_367.70 },
+  ],
+  deal1: [
+    { label:'Vehicle 2',           wallet:'0x361dC9c21Ad1016C0dA11BF88D0352B9FC412DE4', depositRef: 2_000_000.00 },
+  ],
+};
+
+// Reference rates for fallback (used only when vault is wound down and rate unreadable)
+const REF_RATE = { liUSD13w: 1.207013 };
+
+// InfiniFi Gateway — used to look up LockingController address on-chain
+const GATEWAY = '0x3f04b65Ddbd87f9CE0A2e7Eb24d80e7fb87625b5';
+
+function addrData(a){ return a.toLowerCase().replace('0x','').padStart(64,'0'); }
+function u256Data(n){ return BigInt(n).toString(16).padStart(64,'0'); }
+function decHex(h){ const s=(h||'').replace('0x',''); return (s&&!/^0+$/.test(s))?BigInt('0x'+s.slice(0,64)):0n; }
+
+async function rpcOne(url,to,data){
+  try{
+    const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({jsonrpc:'2.0',method:'eth_call',params:[{to,data:'0x'+data},'latest'],id:Date.now()})});
+    const j=await r.json();
+    if(!j.error&&j.result&&j.result!=='0x') return j.result;
+  }catch(_){}
+  return null;
+}
+async function rpc(rpcs,to,data){
+  for(const url of rpcs){ const r=await rpcOne(url,to,data); if(r) return r; }
+  return '0x'+'0'.repeat(64);
+}
+
+const C = {
+  bal  : (r,a) => rpc(r,a,'70a08231'+addrData(WALLET)).then(decHex),
+  dec  : (r,a) => rpc(r,a,'313ce567').then(decHex),
+  tA   : (r,a) => rpc(r,a,'01e1d114').then(decHex),
+  tS   : (r,a) => rpc(r,a,'18160ddd').then(decHex),
+  cta  : (r,a,s)=> rpc(r,a,'07a2d13a'+u256Data(s)).then(decHex),
+  pay  : (r,a) => rpc(r,a,'bf47e798').then(decHex),
+};
+
+function toU6(raw,dec){ const d=BigInt(dec); return d>=6n?raw/(10n**(d-6n)):raw*(10n**(6n-d)); }
+
+// Look up LockingController address via InfiniFiGatewayV1.getAddress("lockingController")
+// selector: bf40fac1 = keccak4("getAddress(string)")
+async function getLockingController(rpcs){
+  const d='bf40fac1' +
+    '0000000000000000000000000000000000000000000000000000000000000020' +
+    '0000000000000000000000000000000000000000000000000000000000000011' +
+    '6c6f636b696e67436f6e74726f6c6c6572000000000000000000000000000000';
+  const r=await rpc(rpcs,GATEWAY,d);
+  if(!r||/^0x0*$/.test(r)) return null;
+  return '0x'+r.replace(/^0x/,'').slice(-40);
+}
+
+// Call LockingController.exchangeRate(uint32 epochs) → WAD (18-dec) iUSD-per-share rate
+// selector: 10821ff9 = keccak4("exchangeRate(uint32)")
+async function lcRate(rpcs,lcAddr,epochs){
+  if(!lcAddr) return 0n;
+  const d='10821ff9'+epochs.toString(16).padStart(64,'0');
+  return rpc(rpcs,lcAddr,d).then(decHex);
+}
+
+// Get UnwindingModule address from LockingController
+// selector: e37d01b1 = keccak4("unwindingModule()")
+async function getUnwindingModule(rpcs,lcAddr){
+  if(!lcAddr) return null;
+  const r=await rpc(rpcs,lcAddr,'e37d01b1');
+  if(!r||/^0x0*$/.test(r)) return null;
+  return '0x'+r.replace(/^0x/,'').slice(-40);
+}
+
+// Scan UnwindingStarted events to find all unwinding positions for a given wallet.
+// Returns array of {startTs, epochs, receiptTokens0} objects.
+// event topic: 898a174703345948bd8be8a22a0b81b1254483d955a1815cd000eec8271afc06
+// = keccak256("UnwindingStarted(uint256,address,uint256,uint32,uint256)")
+// EpochLib epoch duration = 1 week = 604800 seconds
+const EPOCH_DUR = 604800n;
+async function getUnwindingPositions(rpcs,umAddr,walletAddr){
+  const TOPIC='0x898a174703345948bd8be8a22a0b81b1254483d955a1815cd000eec8271afc06';
+  const FROM='0x1400000'; // InfiniFi launched ~block 20971520 (Nov 2025)
+  for(const url of rpcs){
+    try{
+      const body=JSON.stringify({jsonrpc:'2.0',method:'eth_getLogs',id:Date.now(),
+        params:[{address:umAddr,topics:[TOPIC],fromBlock:FROM,toBlock:'latest'}]});
+      const resp=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body});
+      const json=await resp.json();
+      if(json.error||!Array.isArray(json.result)) continue;
+      const positions=[];
+      for(const log of json.result){
+        // data layout: address(32) + receiptTokens(32) + unwindingEpochs(32) + rewardWeight(32)
+        const d=log.data.replace('0x','');
+        const user='0x'+d.slice(24,64);
+        if(user.toLowerCase()!==walletAddr.toLowerCase()) continue;
+        const startTs      = BigInt(log.topics[1]);
+        const receiptTokens0 = BigInt('0x'+d.slice(64,128));
+        const epochs       = Number(BigInt('0x'+d.slice(128,192)));
+        // maturity: toEpoch * EPOCH_DUR where toEpoch = (startTs/EPOCH_DUR + 1) + epochs
+        const fromEpoch    = startTs/EPOCH_DUR + 1n;
+        const toEpoch      = fromEpoch + BigInt(epochs);
+        const maturityTs   = toEpoch * EPOCH_DUR;
+        positions.push({startTs, epochs, receiptTokens0, maturityTs});
+      }
+      // sort oldest first
+      return positions.sort((a,b)=>Number(a.startTs-b.startTs));
+    }catch(_){}
+  }
+  return [];
+}
+
+// Get iUSD balance of a specific UnwindingModule position
+// balanceOf(address,uint256) selector: 00fdd58e
+async function getUnwindingBalance(rpcs,umAddr,walletAddr,startTs){
+  const d='00fdd58e'+addrData(walletAddr)+u256Data(startTs);
+  return rpc(rpcs,umAddr,d).then(decHex);
+}
+
+const $    = id => document.getElementById(id);
+const fmtD = v  => '$'+Intl.NumberFormat('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}).format(Number(v)/1e6);
+const fmtN = (r,d)=> Intl.NumberFormat('en-US',{minimumFractionDigits:2,maximumFractionDigits:4}).format(Number(r)/Math.pow(10,Number(d)));
+const fmtR = u6 => '$'+(Number(u6)/1e6).toFixed(6);
+
+function link(addr,chain){
+  const base=chain==='eth'?'https://etherscan.io':'https://basescan.org';
+  return `<a href="${base}/address/${addr}" target="_blank" class="addr">${addr.slice(0,6)}…${addr.slice(-4)}</a>`;
+}
+
+// ── Ample Money Private Deal Terms (Deal #2) ──────────────────────────────
+// Source: Ample Payments sheets (April & June 2026)
+// PLF Deployment Wallet is Vehicle 1 in Deal #2
+// Logic: USDC = (10%/12) × deposit × % of month
+//        TTS  = (0.30%/6) × (deposit/$1M) × % of month × totalSupply
+const AMPLE_DEAL = {
+  usdcYield   : 0.10,          // 10% p.a.
+  ttsRate     : 0.003,         // 0.30% per $1M per 6 months
+  ttsTotalSup : 3_333_333_333, // fixed total TTS supply
+};
+
+// Calculate current month's Ample Deal #2 accrual for the PLF wallet
+// depositUSD = current abUSDC NAV value in plain USD (float)
+// Returns { monthlyUsdc, accruedUsdc, eomUsdc, monthlyTts, accruedTts, eomTts,
+//           daysElapsed, daysInMonth, pctAccrued, monthLabel }
+function ampleYield(depositUSD) {
+  const now        = new Date();
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const monthEnd   = new Date(now.getFullYear(), now.getMonth()+1, 1);
+  const daysInMonth= (monthEnd - monthStart) / 86400000;
+  // Days elapsed since month start (including today as partial)
+  const msElapsed  = now - monthStart;
+  const daysElapsed= Math.min(msElapsed / 86400000, daysInMonth);
+  const pctAccrued = daysElapsed / daysInMonth;
+  const pctFull    = 1.0; // full month payment
+
+  // USDC: deposit × (annual_rate / 12) × % of month
+  const monthlyUsdc = depositUSD * (AMPLE_DEAL.usdcYield / 12);
+  const accruedUsdc = monthlyUsdc * pctAccrued;
+  const eomUsdc     = monthlyUsdc * pctFull;
+
+  // TTS: (ttsRate/6) × (deposit/$1M) × % of month × totalSupply
+  // = deposit × ttsRate/6 × totalSupply / 1_000_000 × pct
+  const ttsPerMonth = (AMPLE_DEAL.ttsRate / 6) * (depositUSD / 1_000_000) * AMPLE_DEAL.ttsTotalSup;
+  const accruedTts  = ttsPerMonth * pctAccrued;
+  const eomTts      = ttsPerMonth * pctFull;
+
+  const monthLabel  = monthStart.toLocaleDateString('en-US',{month:'long',year:'numeric'});
+  const eomLabel    = monthEnd.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+
+  return { monthlyUsdc, accruedUsdc, eomUsdc,
+           ttsPerMonth, accruedTts, eomTts,
+           daysElapsed: Math.floor(daysElapsed), daysInMonth,
+           pctAccrued, monthLabel, eomLabel };
+}
+
+// Fetch current abUSDC NAV for any wallet (used for all deal participants)
+// Returns USD value as a plain number
+async function getAbUSDCNav(walletAddr, rateU6, sDec) {
+  try {
+    const d = 'balanceOf(address)' ; // use selector directly
+    const sel = '70a08231'; // balanceOf(address)
+    const r = await rpc(BASE_RPCS, ADDR.abUSDC, sel + addrData(walletAddr));
+    const bal = decHex(r);
+    if(bal === 0n) return 0;
+    return Number(bal * rateU6 / (10n ** sDec)) / 1e6;
+  } catch(_) { return 0; }
+}
+
+// Build and render the full deal table for all M31 vehicles
+async function renderAmpleDeal(abUSDC_rateU6, abUSDC_sDec) {
+  const fmt2 = v => '$' + v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  const fmtTTS = v => Math.round(v).toLocaleString('en-US');
+  const shorten = a => `${a.slice(0,6)}…${a.slice(-4)}`;
+  const explorer = a => `https://basescan.org/address/${a}`;
+
+  // Fetch live abUSDC balances for all Deal #2 wallets in parallel
+  const d2Navs = await Promise.all(
+    AMPLE_WALLETS.deal2.map(p => getAbUSDCNav(p.wallet, abUSDC_rateU6, abUSDC_sDec))
+  );
+
+  let d2TotalDep=0, d2TotalUsdc=0, d2TotalTts=0;
+  const d2Rows = AMPLE_WALLETS.deal2.map((p,i) => {
+    const depositUSD = d2Navs[i] > 0 ? d2Navs[i] : p.depositRef;
+    const ay = ampleYield(depositUSD);
+    d2TotalDep  += depositUSD;
+    d2TotalUsdc += ay.eomUsdc;
+    d2TotalTts  += ay.eomTts;
+    const isPLF = p.wallet.toLowerCase() === WALLET.toLowerCase();
+    const rowStyle = isPLF ? 'background:#eff6ff' : '';
+    return `<tr style="${rowStyle}">
+      <td style="font-size:11px">${p.label}${isPLF?' <span style="font-size:10px;color:#1d4ed8;font-weight:700">PLF</span>':''}</td>
+      <td><a href="${explorer(p.wallet)}" target="_blank" class="addr">${shorten(p.wallet)}</a></td>
+      <td class="r" style="font-weight:600">${fmt2(depositUSD)}</td>
+      <td class="r" style="color:#059669;font-weight:600">${fmt2(ay.eomUsdc)}</td>
+      <td class="r" style="color:#6b7280">${fmtTTS(ay.eomTts)}</td>
+    </tr>`;
+  }).join('');
+
+  // Deal #1: fetch live balances — try abUSDC first, then USDC, then fall back to reference
+  // balanceOf selector = 70a08231
+  async function getLiveBalance(walletAddr) {
+    // Try abUSDC (same vault as Deal #2)
+    const abBal = await getAbUSDCNav(walletAddr, abUSDC_rateU6, abUSDC_sDec);
+    if (abBal > 1) return { usd: abBal, token: 'abUSDC', live: true };
+    // Try USDC on Base
+    try {
+      const r = await rpc(BASE_RPCS, ADDR.usdcBase, '70a08231' + addrData(walletAddr));
+      const raw = decHex(r);
+      if (raw > 0n) return { usd: Number(raw) / 1e6, token: 'USDC', live: true };
+    } catch(_) {}
+    return { usd: 0, token: '?', live: false };
+  }
+
+  const d1LiveBalances = await Promise.all(AMPLE_WALLETS.deal1.map(p => getLiveBalance(p.wallet)));
+
+  let d1TotalUsdc=0, d1TotalDep=0;
+  const d1Rows = AMPLE_WALLETS.deal1.map((p, i) => {
+    const live = d1LiveBalances[i];
+    // Use live on-chain balance if found, otherwise fall back to reference amount from PDF
+    const depositUSD = live.live && live.usd > 0 ? live.usd : p.depositRef;
+    const isLive = live.live && live.usd > 0;
+    const depLabel = isLive
+      ? `${fmt2(depositUSD)} <span style="font-size:10px;color:#059669;font-weight:600">● live ${live.token}</span>`
+      : `${fmt2(p.depositRef)} <span style="font-size:10px;color:#f59e0b">⚠ ref only</span>`;
+    // Deal #1: 20% p.a., USDC only, no TTS
+    const monthlyUsdc = depositUSD * 0.20 / 12;
+    d1TotalUsdc += monthlyUsdc;
+    d1TotalDep  += depositUSD;
+    return `<tr>
+      <td style="font-size:11px">${p.label}</td>
+      <td><a href="${explorer(p.wallet)}" target="_blank" class="addr">${shorten(p.wallet)}</a></td>
+      <td class="r" style="font-weight:600">${depLabel}</td>
+      <td class="r" style="color:#059669;font-weight:600">${fmt2(monthlyUsdc)}</td>
+      <td class="r" style="color:#9ca3af;font-size:11px">n/a</td>
+    </tr>`;
+  }).join('');
+
+  const grandTotalDep = d2TotalDep + d1TotalDep;
+  const grandTotalUsdc = d2TotalUsdc + d1TotalUsdc;
+
+  $('am-deal-body').innerHTML = `
+    <div style="font-size:11px;color:#374151;font-weight:600;margin-bottom:4px">Deal #2 — 10% p.a. USDC + TTS bonus</div>
+    <table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:14px">
+      <thead><tr style="border-bottom:2px solid #f3f4f6">
+        <th style="text-align:left;padding:6px 8px;font-size:10px;color:#6b7280;font-weight:600;text-transform:uppercase">Vehicle</th>
+        <th style="text-align:left;padding:6px 8px;font-size:10px;color:#6b7280;font-weight:600;text-transform:uppercase">Wallet</th>
+        <th style="text-align:right;padding:6px 8px;font-size:10px;color:#6b7280;font-weight:600;text-transform:uppercase">Deposit (live)</th>
+        <th style="text-align:right;padding:6px 8px;font-size:10px;color:#6b7280;font-weight:600;text-transform:uppercase">EOM USDC</th>
+        <th style="text-align:right;padding:6px 8px;font-size:10px;color:#6b7280;font-weight:600;text-transform:uppercase">EOM TTS</th>
+      </tr></thead>
+      <tbody>${d2Rows}
+        <tr style="border-top:2px solid #e0e7ff;background:#f8faff">
+          <td colspan="2" style="padding:7px 8px;font-weight:700;font-size:12px;color:#1d4ed8">Deal #2 Total</td>
+          <td style="text-align:right;padding:7px 8px;font-weight:700;color:#1d4ed8">${fmt2(d2TotalDep)}</td>
+          <td style="text-align:right;padding:7px 8px;font-weight:700;color:#059669">${fmt2(d2TotalUsdc)}</td>
+          <td style="text-align:right;padding:7px 8px;font-weight:700;color:#6b7280">${fmtTTS(d2TotalTts)}</td>
+        </tr>
+      </tbody>
+    </table>
+    <div style="font-size:11px;color:#374151;font-weight:600;margin-bottom:4px">Deal #1 — 20% p.a. USDC only</div>
+    <table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:14px">
+      <thead><tr style="border-bottom:2px solid #f3f4f6">
+        <th style="text-align:left;padding:6px 8px;font-size:10px;color:#6b7280;font-weight:600;text-transform:uppercase">Vehicle</th>
+        <th style="text-align:left;padding:6px 8px;font-size:10px;color:#6b7280;font-weight:600;text-transform:uppercase">Wallet</th>
+        <th style="text-align:right;padding:6px 8px;font-size:10px;color:#6b7280;font-weight:600;text-transform:uppercase">Deposit (live)</th>
+        <th style="text-align:right;padding:6px 8px;font-size:10px;color:#6b7280;font-weight:600;text-transform:uppercase">EOM USDC</th>
+        <th style="text-align:right;padding:6px 8px;font-size:10px;color:#6b7280;font-weight:600;text-transform:uppercase">TTS</th>
+      </tr></thead>
+      <tbody>${d1Rows}
+        <tr style="border-top:2px solid #e0e7ff;background:#f8faff">
+          <td colspan="2" style="padding:7px 8px;font-weight:700;font-size:12px;color:#1d4ed8">Deal #1 Total</td>
+          <td style="text-align:right;padding:7px 8px;font-weight:700;color:#1d4ed8">${fmt2(d1TotalDep)}</td>
+          <td style="text-align:right;padding:7px 8px;font-weight:700;color:#059669">${fmt2(d1TotalUsdc)}</td>
+          <td style="text-align:right;padding:7px 8px;font-size:11px;color:#9ca3af">—</td>
+        </tr>
+      </tbody>
+    </table>
+    <div style="background:#0f172a;color:#fff;border-radius:8px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;font-size:13px;flex-wrap:wrap;gap:8px">
+      <span style="font-weight:700">All M31 Ample Deals Combined</span>
+      <span>Total Deployed: <strong style="color:#60a5fa">${fmt2(grandTotalDep)}</strong></span>
+      <span>Monthly USDC: <strong style="color:#34d399">${fmt2(grandTotalUsdc)}</strong></span>
+      <span>Annualised: <strong style="color:#a78bfa">${fmt2(grandTotalUsdc*12)}</strong></span>
+    </div>`;
+}
+
+async function vaultRate(rpcs,addr,knownAssetDec){
+  const [sDecRaw,assets,supply]= await Promise.all([C.dec(rpcs,addr),C.tA(rpcs,addr),C.tS(rpcs,addr)]);
+  // Default to 18 if decimals() call fails — prevents convertToAssets(1) rounding to 0
+  const sDec = sDecRaw > 0n ? sDecRaw : 18n;
+  const aDec = knownAssetDec!=null ? BigInt(knownAssetDec) : sDec;
+  const cta  = await C.cta(rpcs,addr,10n**sDec);
+  if(cta>0n)  return {rateU6:toU6(cta,aDec), sDec};
+  if(assets>0n&&supply>0n){
+    const amt=assets*(10n**sDec)/supply;
+    return {rateU6:toU6(amt,aDec), sDec};
+  }
+  return null;
+}
+
+// ── Wallet Activity Scanner ────────────────────────────────────────────────
+const TRANSFER_SIG = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
+// Base: ~2s/block, Ethereum: ~12s/block — used to estimate tx timestamps from block numbers
+const BLOCK_TIME = { base: 2, eth: 12 };
+// 30-day lookback in blocks
+const LOOKBACK = { base: 1_296_000, eth: 216_000 };
+
+// Token metadata for known addresses (lowercase)
+const TOKEN_META = {};
+Object.entries({
+  yUTY:'yUTY,18', abUSDC:'abUSDC,6', usdcBase:'USDC,6',
+  siUSD:'siUSD,18', liUSD2w:'liUSD-2w,18', liUSD4w:'liUSD-4w,18',
+  liUSD13w:'liUSD-13w,18', iUSD:'iUSD,18', usdtEth:'USDT,6',
+  usdcEth:'USDC,6',
+}).forEach(([k,v])=>{
+  const [sym,dec]=v.split(',');
+  TOKEN_META[ADDR[k].toLowerCase()]={sym,dec:Number(dec)};
+});
+
+// Symbol + decimals cache for unknown tokens
+const SYM_CACHE = {};
+const DEC_CACHE = {};
+
+function decodeABIString(r){
+  try{
+    const hex=r.slice(2);
+    const len=parseInt(hex.slice(64,128),16);
+    if(len===0||len>128) return null;
+    const bytes=hex.slice(128,128+len*2);
+    return bytes.match(/.{2}/g).map(b=>String.fromCharCode(parseInt(b,16))).join('').replace(/\0/g,'');
+  }catch(_){return null;}
+}
+
+async function getSymbol(rpcs, addr){
+  const key=addr.toLowerCase();
+  if(SYM_CACHE[key]) return SYM_CACHE[key];
+  try{
+    const r=await rpc(rpcs,addr,'95d89b41'); // symbol()
+    if(!r||r==='0x') return null;
+    const sym=decodeABIString(r);
+    if(sym) SYM_CACHE[key]=sym;
+    return sym;
+  }catch(_){return null;}
+}
+
+// Fetch symbol + decimals together for unknown tokens (prevents dec=18 fallback bug)
+async function getTokenMeta(rpcs, addr){
+  const key=addr.toLowerCase();
+  const [symResult, decResult] = await Promise.allSettled([
+    getSymbol(rpcs, addr),
+    rpc(rpcs, addr, '313ce567').then(r=>{ // decimals()
+      const v=decHex(r);
+      return (v>0n && v<=36n) ? Number(v) : null;
+    })
+  ]);
+  const sym = symResult.status==='fulfilled' ? symResult.value : null;
+  const dec = decResult.status==='fulfilled'  ? decResult.value : null;
+  if(sym) SYM_CACHE[key]=sym;
+  if(dec!==null) DEC_CACHE[key]=dec;
+}
+
+async function getCurrentBlock(rpcs){
+  for(const url of rpcs){
+    try{
+      const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({jsonrpc:'2.0',method:'eth_blockNumber',id:1,params:[]})});
+      const j=await r.json();
+      if(j.result) return parseInt(j.result,16);
+    }catch(_){}
+  }
+  return null;
+}
+
+async function fetchLogs(rpcs, topics, fromBlock){
+  for(const url of rpcs){
+    try{
+      const body=JSON.stringify({jsonrpc:'2.0',method:'eth_getLogs',id:Date.now(),
+        params:[{topics,fromBlock:'0x'+fromBlock.toString(16),toBlock:'latest'}]});
+      const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body});
+      const j=await r.json();
+      if(j.error||!Array.isArray(j.result)) continue;
+      return j.result;
+    }catch(_){}
+  }
+  return [];
+}
+
+// Current active filter
+let _actFilter='all';
+let _actData=[];
+
+function actFilter(el,f){
+  _actFilter=f;
+  document.querySelectorAll('.act-filter').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  renderActivity(_actData);
+}
+
+function renderActivity(events){
+  if(!events||events.length===0){
+    $('act-body').innerHTML='<div class="loading" style="padding:24px 10px">No activity found in the last 30 days.</div>';
+    return;
+  }
+  const filtered=events.filter(e=>{
+    if(_actFilter==='all') return true;
+    if(_actFilter==='in')  return e.direction==='in';
+    if(_actFilter==='out') return e.direction==='out';
+    return e.chain===_actFilter;
+  });
+  if(filtered.length===0){
+    $('act-body').innerHTML='<div class="loading" style="padding:24px 10px">No matching events.</div>';
+    return;
+  }
+  const fmtAmt=v=>{
+    if(v>=1e9) return (v/1e9).toFixed(2)+'B';
+    if(v>=1e6) return (v/1e6).toFixed(2)+'M';
+    if(v>=1000) return v.toLocaleString('en-US',{maximumFractionDigits:2});
+    return v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:4});
+  };
+  const explorerBase=(chain,hash)=>
+    chain==='base'?`https://basescan.org/tx/${hash}`:`https://etherscan.io/tx/${hash}`;
+  const explorerAddr=(chain,addr)=>
+    chain==='base'?`https://basescan.org/address/${addr}`:`https://etherscan.io/address/${addr}`;
+  const shorten=a=>`${a.slice(0,6)}…${a.slice(-4)}`;
+
+  const rows=filtered.slice(0,100).map(e=>{
+    const dt=new Date(e.timestamp);
+    const dateStr=dt.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+    const timeStr=dt.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+    const knownCls=e.known?'tok-known':'tok-unknown';
+    const dirHtml=e.direction==='in'
+      ?`<span class="dir-in">↓ IN</span>`
+      :`<span class="dir-out">↑ OUT</span>`;
+    const chainHtml=e.chain==='base'
+      ?`<span class="act-chain act-base">Base</span>`
+      :`<span class="act-chain act-eth">ETH</span>`;
+    const counterAddr=e.direction==='in'?e.from:e.to;
+    return `<tr>
+      <td class="act-date">${dateStr}<br><span style="font-size:10px">${timeStr}</span></td>
+      <td>${chainHtml}</td>
+      <td>${dirHtml}</td>
+      <td class="act-amt ${knownCls}">${fmtAmt(e.amount)} <span style="font-weight:400">${e.sym}</span></td>
+      <td><a href="${explorerAddr(e.chain,counterAddr)}" target="_blank" class="addr">${shorten(counterAddr)}</a></td>
+      <td class="act-hash"><a href="${explorerBase(e.chain,e.txHash)}" target="_blank">↗ tx</a></td>
+    </tr>`;
+  }).join('');
+  $('act-body').innerHTML=`
+    <table class="act-table">
+      <thead><tr>
+        <th>Date</th><th>Chain</th><th>Dir</th>
+        <th>Token &amp; Amount</th><th>Counterparty</th><th>Tx</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <div class="act-count">Showing ${Math.min(filtered.length,100)} of ${filtered.length} events · ${events.length} total (both chains)</div>`;
+}
+
+async function runActivity(){
+  try{
+    // Get current block numbers for both chains
+    const [baseCurrent,ethCurrent]=await Promise.all([
+      getCurrentBlock(BASE_RPCS), getCurrentBlock(ETH_RPCS),
+    ]);
+    if(!baseCurrent&&!ethCurrent){
+      $('act-body').innerHTML='<div class="loading" style="padding:24px 10px;color:#f87171">Could not reach RPC endpoints for activity scan.</div>';
+      return;
+    }
+
+    const baseFrom = baseCurrent ? baseCurrent - LOOKBACK.base : null;
+    const ethFrom  = ethCurrent  ? ethCurrent  - LOOKBACK.eth  : null;
+    const walletPadded='0x000000000000000000000000'+WALLET.slice(2).toLowerCase();
+    const now=Date.now();
+
+    // Fetch Transfer events FROM and TO wallet on both chains in parallel
+    const [baseOut,baseIn,ethOut,ethIn]=await Promise.all([
+      baseFrom?fetchLogs(BASE_RPCS,[TRANSFER_SIG,walletPadded,null],baseFrom):[],
+      baseFrom?fetchLogs(BASE_RPCS,[TRANSFER_SIG,null,walletPadded],baseFrom):[],
+      ethFrom ?fetchLogs(ETH_RPCS, [TRANSFER_SIG,walletPadded,null],ethFrom ):[],
+      ethFrom ?fetchLogs(ETH_RPCS, [TRANSFER_SIG,null,walletPadded],ethFrom ):[],
+    ]);
+
+    // Collect unknown token addresses for symbol resolution
+    const allLogs=[
+      ...baseOut.map(l=>({...l,chain:'base',direction:'out'})),
+      ...baseIn .map(l=>({...l,chain:'base',direction:'in' })),
+      ...ethOut .map(l=>({...l,chain:'eth', direction:'out'})),
+      ...ethIn  .map(l=>({...l,chain:'eth', direction:'in' })),
+    ];
+
+    // Deduplicate on (txHash, logIndex) only — direction derived from addresses, not query
+    const seen=new Set();
+    const unique=allLogs.filter(l=>{
+      const k=l.transactionHash+'|'+l.logIndex;
+      if(seen.has(k)) return false; seen.add(k); return true;
+    }).map(l=>{
+      // Recompute direction from actual addresses (not which query returned it)
+      const from='0x'+l.topics[1].slice(26).toLowerCase();
+      const dir = from===WALLET.toLowerCase() ? 'out' : 'in';
+      return {...l, direction:dir};
+    });
+
+    // Resolve unknown token metadata (symbol + decimals) in parallel
+    const unknownAddrs=[...new Set(unique.map(l=>l.address.toLowerCase()).filter(a=>!TOKEN_META[a]))];
+    await Promise.all(unknownAddrs.map(addr=>{
+      const chainLogs=unique.find(l=>l.address.toLowerCase()===addr);
+      const rpcs=chainLogs?.chain==='base'?BASE_RPCS:ETH_RPCS;
+      return getTokenMeta(rpcs,addr);
+    }));
+
+    // Parse into display objects — filter zero-value transfers (approvals/dust)
+    const events=unique.map(l=>{
+      const tokenAddr=l.address.toLowerCase();
+      const meta=TOKEN_META[tokenAddr];
+      const sym=meta?.sym??SYM_CACHE[tokenAddr]??'???';
+      // Use known meta first, then resolved DEC_CACHE, then 18 as last resort
+      const dec=meta?.dec??DEC_CACHE[tokenAddr]??18;
+      const value=BigInt(l.data);
+      const amount=Number(value)/Math.pow(10,dec);
+      const blockNum=parseInt(l.blockNumber,16);
+      const currentBlock=l.chain==='base'?baseCurrent:ethCurrent;
+      const blocksAgo=currentBlock-blockNum;
+      const secsAgo=blocksAgo*BLOCK_TIME[l.chain];
+      const timestamp=now-secsAgo*1000;
+      const from='0x'+l.topics[1].slice(26);
+      const to  ='0x'+l.topics[2].slice(26);
+      return { blockNum,timestamp,txHash:l.transactionHash,
+               tokenAddr,sym,dec,amount,direction:l.direction,
+               from,to,chain:l.chain,known:!!meta };
+    })
+    .filter(e => e.amount > 0) // drop zero-value transfers (approvals, dust)
+    .sort((a,b)=>b.blockNum-a.blockNum);
+
+    _actData=events;
+    renderActivity(events);
+
+    const earliest=events.length>0?new Date(Math.min(...events.map(e=>e.timestamp))):null;
+    if(earliest){
+      const daysBack=Math.round((Date.now()-earliest.getTime())/86400000);
+      $('act-range').textContent=`${events.length} events · last ~${daysBack} days`;
+    }
+  }catch(e){
+    $('act-body').innerHTML=`<div class="loading" style="color:#f87171;padding:24px 10px">Activity scan error: ${e.message}</div>`;
+  }
+}
+
+async function run(){
+  const btn=$('btn'); btn.disabled=true; btn.textContent='↻ Loading…';
+  ['yp-body','am-body','inf-body'].forEach(id=>
+    $(id).innerHTML='<tr><td colspan="6" class="loading">Loading…</td></tr>');
+  ['c-total','c-yp','c-am','c-inf','c-stbl','yp-nav','am-nav','inf-nav'].forEach(id=>$(id).textContent='—');
+
+  try{
+    // ── Yieldpoint ─────────────────────────────────────────────────────
+    // Fetch ecosystem stats + vault history (for exact price) in parallel
+    const [ypRaw, ypVault] = await Promise.all([
+      fetch(YP_API).then(r=>r.json()).catch(()=>null),
+      fetch(`${YP_API}/yuty`).then(r=>r.json()).catch(()=>null),
+    ]);
+
+    const [yUTY_bal,yUTY_sDec,yUTY_tSup,yUTY_tA] = await Promise.all([
+      C.bal(BASE_RPCS,ADDR.yUTY), C.dec(BASE_RPCS,ADDR.yUTY),
+      C.tS(BASE_RPCS,ADDR.yUTY),  C.tA(BASE_RPCS,ADDR.yUTY),
+    ]);
+
+    const yUTY_effectiveBal = yUTY_bal;
+
+    // Use /v1/yuty vaultHistory[0].price for exact rate; fall back to on-chain totalAssets/totalSupply
+    const ypApiPrice = ypVault?.vaultHistory?.[0]?.price;
+    let yUTY_rateU6=0n, yUTY_nav6=0n;
+    if(ypApiPrice && ypApiPrice > 0){
+      yUTY_rateU6 = BigInt(Math.round(ypApiPrice * 1e6));
+      yUTY_nav6   = yUTY_effectiveBal * yUTY_rateU6 / (10n**18n);
+    } else if(yUTY_tA>0n&&yUTY_tSup>0n){
+      yUTY_rateU6 = yUTY_tA*1000000n/yUTY_tSup;
+      yUTY_nav6   = yUTY_effectiveBal*yUTY_tA/yUTY_tSup/(10n**12n);
+    } else {
+      const cta=await C.cta(BASE_RPCS,ADDR.yUTY,10n**yUTY_sDec);
+      if(cta>0n){ yUTY_rateU6=toU6(cta,18n); yUTY_nav6=yUTY_effectiveBal*yUTY_rateU6/(10n**yUTY_sDec); }
+    }
+
+    const apy7  = ypRaw?.yuty?.apy   ? ypRaw.yuty.apy.toFixed(2)+'%'   : '—';
+    const apy30 = ypRaw?.yuty?.apy30 ? ypRaw.yuty.apy30.toFixed(2)+'%' : '—';
+
+    // ── Ample Money ─────────────────────────────────────────────────────
+    const [abUSDC_bal,abUSDC_tSup] = await Promise.all([
+      C.bal(BASE_RPCS,ADDR.abUSDC), C.tS(BASE_RPCS,ADDR.abUSDC),
+    ]);
+    const amVR = await vaultRate(BASE_RPCS,ADDR.abUSDC,6);
+    const abUSDC_sDec   = amVR?.sDec ?? 6n;
+    const abUSDC_rateU6 = amVR?.rateU6 ?? 1000000n;
+    const abUSDC_nav6   = abUSDC_bal*abUSDC_rateU6/(10n**abUSDC_sDec);
+    const abUSDC_share  = abUSDC_tSup>0n?(Number(abUSDC_bal*10000n/abUSDC_tSup)/100).toFixed(2)+'%':'—';
+
+    // Kick off deal table render with current rate (non-blocking)
+    renderAmpleDeal(abUSDC_rateU6, abUSDC_sDec);
+
+    // Fetch ALL M31 Ample vehicle balances in parallel for accurate total NAV
+    // Runs concurrently with InfiniFi + stablecoin fetches below
+    const allAmpNavPromise = Promise.all(
+      [...AMPLE_WALLETS.deal2, ...AMPLE_WALLETS.deal1].map(p =>
+        getAbUSDCNav(p.wallet, abUSDC_rateU6, abUSDC_sDec).then(v => v > 1 ? v : p.depositRef)
+      )
+    );
+
+    // ── InfiniFi ─────────────────────────────────────────────────────────
+    const [siUSD_bal,iUSD_dec_raw] = await Promise.all([
+      C.bal(ETH_RPCS,ADDR.siUSD), C.dec(ETH_RPCS,ADDR.iUSD),
+    ]);
+    const iUSD_DEC = iUSD_dec_raw>0n ? iUSD_dec_raw : 18n;
+
+    const siVR = await vaultRate(ETH_RPCS,ADDR.siUSD,Number(iUSD_DEC));
+    const siUSD_sDec   = siVR?.sDec ?? 18n;
+    const siUSD_rateU6 = siVR?.rateU6 ?? 1000000n;
+    const siUSD_nav6   = siUSD_bal*siUSD_rateU6/(10n**siUSD_sDec);
+
+    const [li2w_bal,li4w_bal,li13w_bal,iUSD_bal] = await Promise.all([
+      C.bal(ETH_RPCS,ADDR.liUSD2w), C.bal(ETH_RPCS,ADDR.liUSD4w),
+      C.bal(ETH_RPCS,ADDR.liUSD13w), C.bal(ETH_RPCS,ADDR.iUSD),
+    ]);
+
+    // liUSD tokens are plain ERC-20 (LockedPositionToken), not ERC-4626.
+    // Discover LockingController via Gateway.getAddress("lockingController"), then
+    // call exchangeRate(epochs) → WAD (18-dec) iUSD-per-share ratio.
+    const lcAddr = await getLockingController(ETH_RPCS);
+    const [lc_rate_2w,lc_rate_4w,lc_rate_13w] = await Promise.all([
+      lcRate(ETH_RPCS,lcAddr,2), lcRate(ETH_RPCS,lcAddr,4), lcRate(ETH_RPCS,lcAddr,13),
+    ]);
+    const LI_SDEC = 18n; // LockedPositionToken always has 18 decimals
+
+    // Scan UnwindingModule for mid-unlock positions (transferred out of wallet during unlock period)
+    const umAddr = await getUnwindingModule(ETH_RPCS,lcAddr);
+    const umPositions = umAddr ? await getUnwindingPositions(ETH_RPCS,umAddr,WALLET) : [];
+    const umBalances  = await Promise.all(umPositions.map(p=>getUnwindingBalance(ETH_RPCS,umAddr,WALLET,p.startTs)));
+    const midUnlock_nav6 = umBalances.reduce((acc,b)=>acc+toU6(b,iUSD_DEC),0n);
+
+    // liUSD-2w
+    let li2w_rateU6  = lc_rate_2w>0n ? toU6(lc_rate_2w,18n) : 0n;
+    let li2w_rateNote= '';
+    if(li2w_bal>0n && li2w_rateU6===0n){ li2w_rateU6=1000000n; li2w_rateNote=' (face)'; }
+    const li2w_nav6  = li2w_bal>0n ? li2w_bal*li2w_rateU6/(10n**LI_SDEC) : 0n;
+
+    // liUSD-4w
+    let li4w_rateU6  = lc_rate_4w>0n ? toU6(lc_rate_4w,18n) : 0n;
+    let li4w_rateNote= '';
+    if(li4w_bal>0n && li4w_rateU6===0n){ li4w_rateU6=1000000n; li4w_rateNote=' (face)'; }
+    const li4w_nav6  = li4w_bal>0n ? li4w_bal*li4w_rateU6/(10n**LI_SDEC) : 0n;
+
+    // liUSD-13w
+    let li13w_rateU6 = lc_rate_13w>0n ? toU6(lc_rate_13w,18n) : 0n;
+    if(li13w_rateU6===0n) li13w_rateU6=BigInt(Math.round(REF_RATE.liUSD13w*1e6));
+    const li13w_nav6 = li13w_bal>0n ? li13w_bal*li13w_rateU6/(10n**LI_SDEC) : 0n;
+
+    const iUSD_nav6    = toU6(iUSD_bal,iUSD_DEC);
+    const inf_nav6     = siUSD_nav6+li2w_nav6+li4w_nav6+li13w_nav6+iUSD_nav6+midUnlock_nav6;
+
+    // ── Stablecoins (included in total) ──────────────────────────────────
+    // NOTE: Ample monthly yield payments arrive as USDC on Ethereum — usdcEth must be tracked
+    const [usdcBase_bal,usdtEth_bal,usdcEth_bal] = await Promise.all([
+      C.bal(BASE_RPCS,ADDR.usdcBase), C.bal(ETH_RPCS,ADDR.usdtEth), C.bal(ETH_RPCS,ADDR.usdcEth),
+    ]);
+    const stbl_nav6 = toU6(usdcBase_bal,6n)+toU6(usdtEth_bal,6n)+toU6(usdcEth_bal,6n);
+
+    // Sum ALL M31 Ample vehicles across both deals for total NAV
+    const allAmpNavs = await allAmpNavPromise;
+    const allAmpTotalUSD = allAmpNavs.reduce((a, b) => a + b, 0);
+    const allAmp_nav6 = BigInt(Math.round(allAmpTotalUSD * 1e6));
+
+    const total_nav6 = yUTY_nav6+allAmp_nav6+inf_nav6+stbl_nav6;
+
+    // ── Update cards ─────────────────────────────────────────────────────
+    $('c-total').textContent = fmtD(total_nav6);
+    $('c-yp').textContent    = fmtD(yUTY_nav6);
+    $('c-yp-sub').textContent= `7d APY: ${apy7} · 30d: ${apy30}`;
+    $('c-am').textContent    = fmtD(allAmp_nav6);
+    // show accrued yield in card sub — needs ampleYield calc, done after table render below
+    $('c-inf').textContent   = fmtD(inf_nav6);
+    const midUnlocking = [li2w_bal===0n, li4w_bal===0n, li13w_bal===0n].filter(Boolean).length;
+    $('c-inf-sub').textContent= midUnlocking>0?`${midUnlocking} position(s) mid-unlock`:'siUSD + liUSD-2w/4w/13w';
+    $('c-stbl').textContent  = fmtD(stbl_nav6);
+    $('c-stbl-sub').textContent = 'USDC (Base+ETH) · USDT';
+    $('yp-nav').textContent  = fmtD(yUTY_nav6);
+    $('am-nav').textContent  = fmtD(abUSDC_nav6);
+    $('inf-nav').textContent = fmtD(inf_nav6);
+    $('stbl-nav').textContent= fmtD(stbl_nav6);
+
+    // ── Yieldpoint table ─────────────────────────────────────────────────
+    const yUTY_balNote = yUTY_effectiveBal > yUTY_bal
+      ? '<br><span style="font-size:10px;color:#9ca3af">incl. queued redemptions</span>' : '';
+    $('yp-body').innerHTML = `<tr>
+      <td><span class="token-name">yUTY</span></td>
+      <td>${link(ADDR.yUTY,'base')}</td>
+      <td class="r">${fmtN(yUTY_effectiveBal,yUTY_sDec)}${yUTY_balNote}</td>
+      <td class="r">${fmtR(yUTY_rateU6)}</td>
+      <td class="r nav-val">${fmtD(yUTY_nav6)}</td>
+      <td><span class="tag t-green"><span class="dot dot-green"></span>Active</span></td>
+    </tr>`;
+
+    // ── Ample Money table ─────────────────────────────────────────────────
+    $('am-body').innerHTML = `<tr>
+      <td><span class="token-name">aBUSDC</span></td>
+      <td>${link(ADDR.abUSDC,'base')}</td>
+      <td class="r">${fmtN(abUSDC_bal,abUSDC_sDec)}</td>
+      <td class="r">${fmtR(abUSDC_rateU6)}</td>
+      <td class="r nav-val">${fmtD(abUSDC_nav6)}</td>
+      <td><span class="tag t-green"><span class="dot dot-green"></span>Active</span></td>
+    </tr>`;
+    // ── Ample Deal #2 yield accrual (off-chain calculation from deal terms) ──
+    // Deposit amount = current abUSDC NAV in USD
+    const abUSDC_navUSD = Number(abUSDC_nav6) / 1e6;
+    const ay = ampleYield(abUSDC_navUSD);
+    const fmt2 = v => v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+    const fmtTTS = v => Math.round(v).toLocaleString('en-US');
+    const pctBar = Math.round(ay.pctAccrued * 100);
+    $('c-am-sub').textContent = `Accrued: $${fmt2(ay.accruedUsdc)} · EOM: $${fmt2(ay.eomUsdc)}`;
+
+    $('am-notice').innerHTML = `
+      <div class="notice n-blue" style="flex-direction:column;gap:10px;padding:14px 16px">
+        <div style="display:flex;justify-content:space-between;align-items:center;width:100%">
+          <span style="font-weight:700;font-size:13px;color:#1e3a5f">📋 Deal #2 — Private Yield Agreement (10% p.a.)</span>
+          <span style="font-size:11px;color:#6b7280">${ay.monthLabel} · ${ay.daysElapsed}/${ay.daysInMonth} days elapsed</span>
+        </div>
+        <div style="background:#dbeafe;border-radius:6px;height:6px;width:100%;overflow:hidden">
+          <div style="background:#3b82f6;height:100%;width:${pctBar}%;transition:width .3s"></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%">
+          <div style="background:#fff;border:1px solid #bfdbfe;border-radius:8px;padding:10px 12px">
+            <div style="font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Accrued so far</div>
+            <div style="font-size:15px;font-weight:700;color:#1d4ed8">$${fmt2(ay.accruedUsdc)}</div>
+            <div style="font-size:11px;color:#6b7280;margin-top:2px">${fmtTTS(ay.accruedTts)} TTS</div>
+          </div>
+          <div style="background:#fff;border:1px solid #bfdbfe;border-radius:8px;padding:10px 12px">
+            <div style="font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Expected EOM (${ay.eomLabel})</div>
+            <div style="font-size:15px;font-weight:700;color:#059669">$${fmt2(ay.eomUsdc)}</div>
+            <div style="font-size:11px;color:#6b7280;margin-top:2px">${fmtTTS(ay.eomTts)} TTS</div>
+          </div>
+        </div>
+        <div style="font-size:11px;color:#6b7280">
+          Deposit basis: <strong>$${fmt2(abUSDC_navUSD)}</strong> abUSDC NAV
+          · Pool share: <strong>${abUSDC_share}</strong>
+          · Paid to wallet on 1st of next month
+        </div>
+      </div>`;
+
+    // ── InfiniFi table ────────────────────────────────────────────────────
+    function infRow(lbl,addr,bal,sDec,rateU6,nav6,tag,tagCls,dotCls,rateNote=''){
+      const has=bal>0n;
+      const rateStr=rateU6>0n
+        ?fmtR(rateU6)+(rateNote?`<span style="font-size:10px;color:#9ca3af">${rateNote}</span>`:'')
+        :'<span class="dim">—</span>';
+      return `<tr>
+        <td><span class="token-name">${lbl}</span></td>
+        <td>${link(addr,'eth')}</td>
+        <td class="r ${has?'':'dim'}">${has?fmtN(bal,sDec):'0.00'}</td>
+        <td class="r">${rateStr}</td>
+        <td class="r ${has?'nav-val':'dim'}">${has?fmtD(nav6):'—'}</td>
+        <td><span class="tag ${tagCls}"><span class="dot ${dotCls}"></span>${tag}</span></td>
+      </tr>`;
+    }
+
+    function liStatus(bal,rateU6){
+      if(bal>0n) return ['Locked','t-blue','dot-green'];
+      if(rateU6===0n) return ['Mid-Unlock','t-orange','dot-amber'];
+      return ['Matured','t-gray','dot-gray'];
+    }
+
+    let infRows='';
+    infRows += infRow('siUSD',    ADDR.siUSD,   siUSD_bal, siUSD_sDec, siUSD_rateU6, siUSD_nav6,
+      siUSD_bal>0n?'Staked':'Not in wallet', siUSD_bal>0n?'t-green':'t-gray', siUSD_bal>0n?'dot-green':'dot-gray');
+    const [li2w_tag,li2w_cls,li2w_dot]=liStatus(li2w_bal,li2w_rateU6);
+    infRows += infRow('liUSD-2w', ADDR.liUSD2w, li2w_bal,  LI_SDEC,    li2w_rateU6,  li2w_nav6,  li2w_tag, li2w_cls, li2w_dot, li2w_rateNote);
+    const [li4w_tag,li4w_cls,li4w_dot]=liStatus(li4w_bal,li4w_rateU6);
+    infRows += infRow('liUSD-4w', ADDR.liUSD4w, li4w_bal,  LI_SDEC,    li4w_rateU6,  li4w_nav6,  li4w_tag, li4w_cls, li4w_dot, li4w_rateNote);
+    const [li13_tag,li13_cls,li13_dot]=liStatus(li13w_bal,li13w_rateU6);
+    infRows += infRow('liUSD-13w',ADDR.liUSD13w,li13w_bal, LI_SDEC,    li13w_rateU6, li13w_nav6, li13_tag, li13_cls, li13_dot);
+    if(iUSD_bal>0n)
+      infRows += infRow('iUSD',   ADDR.iUSD,    iUSD_bal,  iUSD_DEC,   1000000n,     iUSD_nav6,
+        'Redeemable','t-green','dot-green');
+    // One row per mid-unlock position
+    const fmtTs = ts => new Date(Number(ts)*1000).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+    umPositions.forEach((p,i)=>{
+      const bal6  = toU6(umBalances[i]??0n,iUSD_DEC);
+      const now   = BigInt(Math.floor(Date.now()/1000));
+      const matured = now >= p.maturityTs;
+      const tag   = matured ? 'Ready to Claim' : `Unlocking · ${p.epochs}w`;
+      const cls   = matured ? 't-green' : 't-orange';
+      const dot   = matured ? 'dot-green' : 'dot-amber';
+      infRows += `<tr>
+        <td>
+          <span class="token-name" style="font-size:12px">⟳ liUSD-${p.epochs}w unlock</span><br>
+          <span style="font-size:10px;color:#9ca3af">Started ${fmtTs(p.startTs)} · Matures ${fmtTs(p.maturityTs)}</span>
+        </td>
+        <td>${link(umAddr,'eth')}</td>
+        <td class="r" style="font-size:12px">${fmtN(umBalances[i]??0n,iUSD_DEC)} iUSD</td>
+        <td class="r"><span style="font-size:10px;color:#9ca3af">$1.000000<br>accruing</span></td>
+        <td class="r nav-val">${bal6>0n?fmtD(bal6):'—'}</td>
+        <td><span class="tag ${cls}"><span class="dot ${dot}"></span>${tag}</span></td>
+      </tr>`;
+    });
+    infRows += `<tr class="ttl-row">
+      <td colspan="4">InfiniFi Total (incl. mid-unlock)</td>
+      <td class="r">${fmtD(inf_nav6)}</td><td></td>
+    </tr>`;
+    $('inf-body').innerHTML = infRows;
+
+    const notices=[];
+    if(siUSD_bal===0n)
+      notices.push(`<div class="notice n-blue"><span class="n-icon">ℹ️</span>
+        <span><strong>siUSD:</strong> No balance detected in wallet.</span></div>`);
+    const midUnlockPositions=[];
+    if(li2w_bal===0n) midUnlockPositions.push('liUSD-2w');
+    if(li4w_bal===0n) midUnlockPositions.push('liUSD-4w');
+    if(li13w_bal===0n) midUnlockPositions.push('liUSD-13w');
+    if(midUnlockPositions.length>0){
+      const umValNote = midUnlock_nav6>0n
+        ? `Value <strong>${fmtD(midUnlock_nav6)}</strong> included in total above.`
+        : `Pending redemption value not yet quantified — check at <a href="https://app.infinifi.xyz" target="_blank" style="color:#92400e;font-weight:600;text-decoration:underline">app.infinifi.xyz → Positions → Unlocking</a>.`;
+      notices.push(`<div class="notice n-amber"><span class="n-icon">⚠️</span>
+        <span><strong>${midUnlockPositions.join(', ')} mid-unlock:</strong> Position(s) held in InfiniFi's UnwindingModule — transferred out of wallet during unlock period. ${umValNote}</span></div>`);
+    }
+    $('inf-notice').innerHTML=notices.join('');
+
+    // ── Stablecoins table ─────────────────────────────────────────────────
+    // Build rows only for non-zero balances; always show if any balance present
+    const stblRows = [
+      { sym:'USDC', chain:'base', addr:ADDR.usdcBase, bal:usdcBase_bal, dec:6n, note:'' },
+      { sym:'USDC', chain:'eth',  addr:ADDR.usdcEth,  bal:usdcEth_bal,  dec:6n, note:'incl. Ample yield pmts' },
+      { sym:'USDT', chain:'eth',  addr:ADDR.usdtEth,  bal:usdtEth_bal,  dec:6n, note:'' },
+    ].map(s=>{
+      const nav6=toU6(s.bal,s.dec);
+      const has=s.bal>0n;
+      return `<tr${has?'':' style="opacity:.45"'}>
+        <td><span class="token-name">${s.sym}</span>${s.note?`<br><span style="font-size:10px;color:#9ca3af">${s.note}</span>`:''}</td>
+        <td>${link(s.addr,s.chain)}</td>
+        <td class="r">${has?fmtN(s.bal,s.dec):'—'}</td>
+        <td class="r">$1.000000</td>
+        <td class="r nav-val">${has?fmtD(nav6):'—'}</td>
+        <td><span class="tag ${s.chain==='base'?'t-blue':'t-purple'}"><span class="dot" style="background:${s.chain==='base'?'#3b82f6':'#8b5cf6'}"></span>${s.chain==='base'?'Base':'Ethereum'}</span></td>
+      </tr>`;
+    }).join('');
+    $('stbl-body').innerHTML = stblRows + `<tr class="ttl-row">
+      <td colspan="4">Stablecoin Total</td>
+      <td class="r">${fmtD(stbl_nav6)}</td><td></td>
+    </tr>`;
+
+    // ── Timestamp ─────────────────────────────────────────────────────────
+    const now=new Date();
+    $('ts').innerHTML=`Updated ${now.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}<br>${now.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit'})}`;
+
+  }catch(e){
+    ['yp-body','am-body','inf-body'].forEach(id=>
+      $(id).innerHTML=`<tr><td colspan="6" class="err">Error: ${e.message}</td></tr>`);
+  }
+
+  btn.disabled=false; btn.textContent='↻ Refresh';
+  // Run activity scanner in parallel (non-blocking — updates its own section)
+  runActivity();
+}
+
+run();
+</script>
+</body>
+</html>

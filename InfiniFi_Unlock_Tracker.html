@@ -1,0 +1,1030 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>InfiniFi Unlock Tracker</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f1f5f9;color:#1e293b;font-size:14px}
+a{color:#3b82f6;text-decoration:none}a:hover{text-decoration:underline}
+.hdr{background:linear-gradient(135deg,#0f172a,#1e293b);color:#fff;padding:16px 28px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.hdr-l .title{font-size:17px;font-weight:700}.hdr-l .sub{font-size:11px;color:#94a3b8;margin-top:3px}
+.hdr-r{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.ts{font-size:11px;color:#94a3b8;text-align:right;line-height:1.6}
+.btn{background:#3b82f6;color:#fff;border:none;border-radius:7px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer}
+.btn:hover{background:#2563eb}.btn:disabled{background:#475569;cursor:not-allowed}
+.btn-sm{background:transparent;border:1px solid #475569;color:#94a3b8;font-size:11px;padding:5px 10px;border-radius:6px;cursor:pointer}
+.btn-sm:hover{border-color:#94a3b8;color:#e2e8f0}
+.btn-red{background:transparent;border:1px solid #ef4444;color:#ef4444;font-size:11px;padding:5px 10px;border-radius:6px;cursor:pointer}
+.btn-red:hover{background:#fee2e2}
+.spin{display:inline-block;animation:spin .9s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.wrap{max-width:1440px;margin:0 auto;padding:20px 18px}
+.cards{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:18px}
+.card{background:#fff;border-radius:12px;padding:16px 18px;box-shadow:0 1px 3px rgba(0,0,0,.07)}
+.c-lbl{font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:.7px;font-weight:600;margin-bottom:6px}
+.c-val{font-size:22px;font-weight:700;color:#1e293b;line-height:1}
+.c-val.blue{color:#2563eb}.c-val.amber{color:#d97706}.c-val.green{color:#059669}.c-val.purple{color:#7c3aed}
+.c-sub{font-size:11px;color:#94a3b8;margin-top:5px}
+
+/* Progress panel */
+.prog-panel{background:#fff;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,.07);margin-bottom:18px;overflow:hidden}
+.prog-hdr{display:flex;align-items:center;justify-content:space-between;padding:11px 18px;border-bottom:1px solid #f1f5f9}
+.prog-title{font-size:13px;font-weight:700;display:flex;align-items:center;gap:7px}
+.prog-pct{font-size:12px;font-weight:700;color:#3b82f6}
+.prog-bar-outer{height:4px;background:#e2e8f0}
+.prog-bar-inner{height:100%;background:linear-gradient(90deg,#3b82f6,#06b6d4);transition:width .4s}
+.stages{padding:12px 18px;display:flex;flex-direction:column;gap:6px}
+.sr{display:flex;align-items:flex-start;gap:9px;font-size:12px;line-height:1.4}
+.si{width:17px;height:17px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0;margin-top:1px}
+.si.done{background:#d1fae5;color:#059669}.si.active{background:#dbeafe;color:#2563eb}.si.wait{background:#f1f5f9;color:#94a3b8}.si.skip{background:#fef3c7;color:#92400e}
+.sr-body{flex:1;min-width:0}
+.sr-body .nm{font-weight:600;color:#1e293b}.sr-body .nm.dim{color:#94a3b8;font-weight:400}
+.sr-body .det{font-size:11px;color:#475569;margin-top:3px;line-height:1.6}
+.sr-body .det b{color:#1e293b}
+.mb{height:3px;background:#e2e8f0;border-radius:2px;margin-top:5px;overflow:hidden}
+.mb-fill{height:100%;background:#3b82f6;border-radius:2px;transition:width .35s}
+/* token sub-bars */
+.tok-row{display:flex;align-items:center;gap:6px;margin-top:3px}
+.tok-lbl{font-size:10px;color:#64748b;width:60px;flex-shrink:0}
+.tok-bar{flex:1;height:5px;background:#e2e8f0;border-radius:3px;overflow:hidden}
+.tok-bar-fill{height:100%;border-radius:3px;background:#3b82f6;transition:width .3s}
+.tok-cnt{font-size:10px;color:#94a3b8;width:60px;text-align:right;flex-shrink:0}
+
+/* DB / cache banners */
+.db-banner{background:#ecfdf5;border:1px solid #6ee7b7;border-radius:8px;padding:10px 16px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:12px;color:#065f46}
+.stale-bar{background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;padding:9px 16px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:12px;color:#92400e}
+
+.section{background:#fff;border-radius:14px;box-shadow:0 1px 3px rgba(0,0,0,.07);margin-bottom:18px;overflow:hidden}
+.sec-hdr{display:flex;align-items:center;justify-content:space-between;padding:13px 18px;border-bottom:1px solid #f1f5f9}
+.sec-title{font-size:13px;font-weight:700;display:flex;align-items:center;gap:7px}
+.badge{font-size:11px;background:#eff6ff;color:#2563eb;border-radius:20px;padding:2px 8px;font-weight:600}
+.sec-nav{font-size:15px;font-weight:700;color:#2563eb}
+.chart-wrap{padding:18px 18px 10px}
+.chart-legend{display:flex;gap:16px;margin-bottom:12px;font-size:11px;font-weight:600;align-items:center}
+.ld{width:10px;height:10px;border-radius:2px;display:inline-block;margin-right:4px;vertical-align:middle}
+#chart-svg-wrap{width:100%;overflow-x:auto}
+.ana-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding:16px}
+.ana-card{background:#f8fafc;border-radius:10px;padding:14px}
+.ana-ttl{font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:.6px;font-weight:600;margin-bottom:10px}
+.ana-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid #e2e8f0;font-size:12px}
+.ana-row:last-child{border:none}
+table{width:100%;border-collapse:collapse}
+th{padding:8px 14px;font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:.6px;font-weight:600;text-align:left;background:#f8fafc;border-bottom:2px solid #f1f5f9;white-space:nowrap}
+th.r{text-align:right}
+td{padding:10px 14px;border-bottom:1px solid #f8fafc;vertical-align:middle}td.r{text-align:right}
+tr:last-child td{border:none}tr:hover td{background:#fafcff}
+.loading{text-align:center;padding:28px;color:#94a3b8;font-size:12px}.err{color:#dc2626}
+.tag{display:inline-flex;align-items:center;gap:4px;border-radius:20px;padding:3px 9px;font-size:10px;font-weight:600}
+.tg{background:#d1fae5;color:#065f46}.tb{background:#dbeafe;color:#1e40af}.ta{background:#fef3c7;color:#92400e}
+.dot{width:5px;height:5px;border-radius:50%;background:currentColor}
+.klbl{font-size:10px;color:#2563eb;font-weight:700;background:#eff6ff;border-radius:4px;padding:1px 5px;margin-left:5px}
+.nv{font-weight:700}.mu{color:#94a3b8}
+.pbar-w{width:80px;background:#f1f5f9;border-radius:3px;height:4px;overflow:hidden;margin-top:3px;display:inline-block}
+.pbar{height:100%;background:#3b82f6;border-radius:3px}.pbar.done{background:#10b981}
+.cd{font-weight:600}.cd.soon{color:#d97706}.cd.ready{color:#059669}
+.buck{display:inline-block;border-radius:5px;padding:2px 7px;font-size:11px;font-weight:600}
+.b2{background:#ede9fe;color:#6d28d9}.b4{background:#dbeafe;color:#1e40af}.b13{background:#d1fae5;color:#065f46}.bx{background:#f1f5f9;color:#64748b}
+.quick-nav{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+.quick-nav a{background:#fff;border:1px solid #cbd5e1;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:600;color:#1e40af;text-decoration:none}
+.quick-nav a:hover{background:#eff6ff;border-color:#93c5fd}
+.section-target{scroll-margin-top:12px}
+th.sort-hint{font-size:9px;color:#94a3b8;font-weight:500;text-transform:none;letter-spacing:0}
+.footer{background:#0f172a;color:#64748b;font-size:11px;padding:12px 28px;display:flex;gap:20px;flex-wrap:wrap}
+.footer b{color:#cbd5e1}
+@media(max-width:1100px){.cards{grid-template-columns:repeat(3,1fr)}.ana-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:700px){.cards{grid-template-columns:repeat(2,1fr)}.ana-grid{grid-template-columns:1fr}}
+.cards .card-total{background:linear-gradient(135deg,#f0f9ff,#e0f2fe);border:1px solid #bae6fd}
+.cards .card-total .c-val{color:#0369a1;font-size:24px}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-l">
+    <div class="title">InfiniFi · Protocol Unlock Tracker</div>
+    <div class="sub">All lock &amp; unwinding positions · Ethereum Mainnet</div>
+  </div>
+  <div class="hdr-r">
+    <div class="ts" id="ts-lbl">—</div>
+    <button class="btn-red" id="btn-full" onclick="run('fullscan')" style="display:none" title="Clears address database and rescans all blocks">⚠ Full Rescan</button>
+    <button class="btn-sm" id="btn-ref-bal" onclick="run('refresh')" style="display:none">⟳ Refresh Balances</button>
+    <button class="btn" id="btn-main" onclick="run('load')">
+      <span class="spin" id="btn-spin" style="display:none">⟳</span>
+      <span id="btn-lbl">⟳ Load</span>
+    </button>
+  </div>
+</div>
+
+<div class="wrap">
+  <!-- DB banner (shown when addresses loaded from cache) -->
+  <div class="db-banner" id="db-banner" style="display:none">
+    <span id="db-txt">📦 Address database loaded</span>
+    <div style="display:flex;gap:8px">
+      <button class="btn-sm" onclick="run('refresh')">⟳ Refresh Balances</button>
+      <button class="btn-red" onclick="run('fullscan')">⚠ Full Rescan</button>
+    </div>
+  </div>
+  <!-- Stale balance banner -->
+  <div class="stale-bar" id="stale-bar" style="display:none">
+    <span id="stale-txt"></span>
+    <button class="btn-sm" onclick="run('refresh')">⟳ Refresh Now</button>
+  </div>
+
+  <!-- Summary cards -->
+  <div class="cards">
+    <div class="card"><div class="c-lbl">Wallet Locks</div><div class="c-val blue" id="c-locked">—</div><div class="c-sub" id="c-locked-sub">liUSD on-chain supply (all durations)</div></div>
+    <div class="card"><div class="c-lbl">Unwinding</div><div class="c-val amber" id="c-unwind">—</div><div class="c-sub" id="c-unwind-sub">mid-unlock in UnwindingModule</div></div>
+    <div class="card card-total"><div class="c-lbl">Protocol Total</div><div class="c-val" id="c-total">—</div><div class="c-sub" id="c-total-sub">wallet supply + unwinding</div></div>
+    <div class="card"><div class="c-lbl">Next Unlock</div><div class="c-val green" id="c-next">—</div><div class="c-sub" id="c-next-sub">earliest confirmed</div></div>
+    <div class="card"><div class="c-lbl">M31 Share</div><div class="c-val purple" id="c-m31">—</div><div class="c-sub" id="c-m31-sub">of protocol total</div></div>
+  </div>
+
+  <!-- Progress panel -->
+  <div class="prog-panel" id="prog-panel" style="display:none">
+    <div class="prog-hdr">
+      <div class="prog-title"><span class="spin" id="ps">⟳</span> <span id="pt">Scanning…</span></div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <div class="prog-pct" id="pp">0%</div>
+        <button class="btn-sm" onclick="document.getElementById('prog-panel').style.display='none'" style="font-size:10px;padding:3px 8px">✕</button>
+      </div>
+    </div>
+    <div class="prog-bar-outer"><div class="prog-bar-inner" id="pb" style="width:0%"></div></div>
+    <div class="stages" id="sl"></div>
+  </div>
+
+  <!-- Quick navigation -->
+  <div class="quick-nav">
+    <a href="#sec-locks">🔒 Wallet Locks — <span id="nav-locks">—</span></a>
+    <a href="#sec-unwind">⏳ Unwinding — <span id="nav-unwind">—</span></a>
+    <a href="#sec-schedule">📅 Unlock Schedule</a>
+    <a href="#sec-m31">💜 M31 Breakdown</a>
+  </div>
+
+  <!-- Position type guide -->
+  <div class="db-banner" id="type-guide" style="background:#eff6ff;border-color:#93c5fd;color:#1e40af;margin-bottom:16px">
+    <span id="type-guide-txt">Loading protocol summary…</span>
+  </div>
+
+  <!-- Wallet Locks (scroll here for locked amounts) -->
+  <div class="section section-target" id="sec-locks">
+    <div class="sec-hdr">
+      <div class="sec-title">🔒 Wallet Lock Positions <span class="badge" id="badge-locks">—</span></div>
+      <div class="sec-nav" id="locks-nav">—</div>
+    </div>
+    <div style="padding:0 18px 8px;font-size:11px;color:#64748b">liUSD still in wallets — top 20 by value (card uses full on-chain supply across 1w–13w).</div>
+    <table><thead><tr>
+      <th>#</th><th>Address</th><th class="r">1w</th><th class="r">2w</th><th class="r">4w</th><th class="r">8w</th><th class="r">13w</th><th class="r">Other</th><th class="r">Total <span class="sort-hint">↓ value</span></th><th>Label</th>
+    </tr></thead><tbody id="locks-body"><tr><td colspan="10" class="loading">Loading…</td></tr></tbody></table>
+  </div>
+
+  <!-- Unwinding (scroll here for mid-unlock positions) -->
+  <div class="section section-target" id="sec-unwind">
+    <div class="sec-hdr">
+      <div class="sec-title">⏳ Unwinding Positions <span class="badge" id="badge-unwind">—</span></div>
+      <div class="sec-nav" id="unwind-nav">—</div>
+    </div>
+    <div style="padding:0 18px 8px;font-size:11px;color:#64748b">iUSD mid-unlock in UnwindingModule — top 20 by value. Positions unlocked &gt;7 days ago are hidden; card totals use full data.</div>
+    <table><thead><tr>
+      <th>#</th><th>Address</th><th class="r">Value (USD) <span class="sort-hint">↓ value</span></th><th>Type</th>
+      <th>Lock Started</th><th>Unlock Date</th><th>Time Left</th><th>Status</th>
+    </tr></thead><tbody id="unwind-body"><tr><td colspan="8" class="loading">Loading…</td></tr></tbody></table>
+  </div>
+
+  <!-- Unlock Schedule (forward-looking only) -->
+  <div class="section section-target" id="sec-schedule">
+    <div class="sec-hdr">
+      <div class="sec-title">📅 Unlock Schedule <span class="badge" id="badge-sched">—</span></div>
+      <div class="sec-nav" id="sched-ttl">—</div>
+    </div>
+    <div class="chart-wrap">
+      <div class="chart-legend">
+        <span><span class="ld" style="background:#3b82f6"></span>Upcoming unlock dates only</span>
+        <span style="color:#94a3b8;font-weight:400;font-size:10px">Today and future · past dates hidden</span>
+      </div>
+      <div id="chart-svg-wrap"><div class="loading" id="chart-msg">Loading…</div></div>
+    </div>
+    <table><thead><tr>
+      <th>Unlock Date</th><th class="r">Confirmed ($)</th><th class="r">Positions</th><th class="r" colspan="3">Wallet-held / Notes</th><th>Buckets</th>
+    </tr></thead><tbody id="sched-body"><tr><td colspan="7" class="loading">Loading…</td></tr></tbody></table>
+  </div>
+
+  <!-- Analysis -->
+  <div class="section section-target" id="sec-m31">
+    <div class="sec-hdr"><div class="sec-title">📊 Protocol Analysis</div></div>
+    <div class="ana-grid">
+      <div class="ana-card">
+        <div class="ana-ttl">Capital Exiting — Confirmed</div>
+        <div class="ana-row"><span>Next 7 days</span><span class="nv" id="a-7d">—</span></div>
+        <div class="ana-row"><span>Next 30 days</span><span class="nv" id="a-30d">—</span></div>
+        <div class="ana-row"><span>Next 90 days</span><span class="nv" id="a-90d">—</span></div>
+        <div class="ana-row"><span>Beyond 90 days</span><span class="nv" id="a-far">—</span></div>
+      </div>
+      <div class="ana-card">
+        <div class="ana-ttl">M31 Wallet Breakdown</div>
+        <div class="ana-row"><span>PLF wallet</span><span class="nv" id="a-plf">—</span></div>
+        <div class="ana-row"><span>V2 #2 (a)</span><span class="nv" id="a-v2a">—</span></div>
+        <div class="ana-row"><span>V2 #2 (b)</span><span class="nv" id="a-v2b">—</span></div>
+        <div class="ana-row"><span>V2 D1</span><span class="nv" id="a-d1">—</span></div>
+      </div>
+  <div class="ana-card">
+        <div class="ana-ttl">Protocol liUSD Mix (on-chain supply, all durations)</div>
+        <div id="a-supply-rows"><div class="ana-row"><span>Loading…</span><span class="nv">—</span></div></div>
+        <div class="ana-row"><span>On-chain supply total</span><span class="nv" id="a-supply">—</span></div>
+        <div class="ana-row"><span>Avg exchange rate</span><span class="nv" id="a-rate">—</span></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="footer">
+  <span>LockingController <b id="f-lc">—</b></span>
+  <span>UnwindingModule <b id="f-um">—</b></span>
+  <span>Block <b id="f-blk">—</b></span>
+  <span>Supply <b id="f-supply">—</b></span>
+  <span>DB: <b id="f-db">—</b></span>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════════════════════
+// CONSTANTS
+// ════════════════════════════════════════════════════════════════════
+// getLogs-capable RPCs first (publicnode/llama/ankr now block or rate-limit log scans)
+// Optional: prepend Alchemy/Infura for faster full scans — https://eth-mainnet.g.alchemy.com/v2/YOUR_KEY
+const ETH_RPCS=['https://rpc.mevblocker.io','https://mainnet.gateway.tenderly.co','https://ethereum.publicnode.com'];
+const GATEWAY='0x3f04b65Ddbd87f9CE0A2e7Eb24d80e7fb87625b5';
+// All liUSD duration tokens on Ethereum mainnet (InfiniFi docs)
+const LIUSD_EPOCHS=[
+  {ep:1, addr:'0x12b004719fb632f1E7c010c6F5D6009Fb4258442'},
+  {ep:2, addr:'0xf1839BeCaF586814D022F16cDb3504ff8D8Ff361'},
+  {ep:4, addr:'0x66bCF6151D5558AfB47c38B20663589843156078'},
+  {ep:5, addr:'0xf0c4A78fEbf4062aeD39A02BE8a4C72E9857d7d1'},
+  {ep:6, addr:'0xb06Cc4548FebfF3D66a680F9c516381c79bC9707'},
+  {ep:7, addr:'0x3A744A6b57984eb62AeB36eB6501d268372cF8bb'},
+  {ep:8, addr:'0xf68b95b7e851170c0e5123a3249dD1Ca46215085'},
+  {ep:9, addr:'0xBB5cA732fAfEd8870F9C0e8406Ad707939c912E1'},
+  {ep:10,addr:'0xd15fbf48c6dDdADC9Ef0693B060d80aF51cC26d5'},
+  {ep:11,addr:'0xed030a37Ec6EB308A416Dc64dD4b649A2BBE4FCd'},
+  {ep:12,addr:'0x3D360aB96B942c1251Ab061178F731eFEbc2d644'},
+  {ep:13,addr:'0xbd3f9814eB946E617f1d774A6762cDbec0bf087A'},
+];
+const DISPLAY_EPOCHS=[1,2,4,8,13];
+const KNOWN={'0x4f5d9d62b17e2a5773e28cdf068d211fb5a0cc8c':['M31 PLF','plf'],'0x9a1ae3e06acbe83afff4cfa4421eced7cdc90184':['M31 V2','v2a'],'0xe9da68d9636284f1f41255e84068aed0767eacef':['M31 V2','v2b'],'0x361dc9c21ad1016c0da11bf88d0352b9fc412de4':['M31 D1','d1']};
+const M31_ADDRS=Object.keys(KNOWN);
+const PLF_ADDR='0x4f5d9d62b17e2a5773e28cdf068d211fb5a0cc8c';
+const M31_PLF_MIN=1e6; // PLF on-chain unwinding is ~$1.53M — below $1M means incomplete fetch
+const REF_RATE_13W=1222358461638439800n; // on-chain fallback for 13w epoch rate (WAD)
+const EPOCH=604800, LAUNCH=0x1400000;
+const STALE_GRACE=7*86400; // hide positions unlocked more than 7 days ago
+const BAL_BATCH=25; // parallel eth_call batch size (avoid RPC drops)
+const TOP_N=20; // max rows shown in wallet/unwinding tables (totals use full data)
+// Separate keys: ADDR_DB never expires; POS_DB is balance data
+const ADDR_DB='ifi_addr_v2', POS_DB='ifi_pos_v9';
+
+const T_TFR='0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
+const T_PC ='0x92177e10bc6c212f7b3d2d410aa7c5ecd47b5a5588ec2b495e42c8b6e394f708';
+const T_UW ='0x898a174703345948bd8be8a22a0b81b1254483d955a1815cd000eec8271afc06';
+const T_WD ='0x46a2a72a853814053fe4418767a186f8a7028b2a21ce0261c931bab916b0ed6d';
+const Z32  ='0x0000000000000000000000000000000000000000000000000000000000000000';
+
+// ════════════════════════════════════════════════════════════════════
+// RPC — all fetches have a hard 12s timeout via AbortController
+// ════════════════════════════════════════════════════════════════════
+async function fetchJSON(url,body,timeoutMs=12000){
+  const ac=new AbortController();
+  const tid=setTimeout(()=>ac.abort(),timeoutMs);
+  try{
+    const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:ac.signal});
+    const j=await r.json();clearTimeout(tid);return j;
+  }catch(e){clearTimeout(tid);console.warn('RPC timeout/err',url.split('/')[2],e?.message);return null;}
+}
+
+async function rpcOne(url,to,data){
+  const j=await fetchJSON(url,{jsonrpc:'2.0',method:'eth_call',id:Date.now(),params:[{to,data:'0x'+data.replace(/^0x/,'')},'latest']});
+  if(j&&!j.error&&j.result&&j.result!=='0x')return j.result;
+  return null;
+}
+async function rpc(to,data){for(const u of ETH_RPCS){const r=await rpcOne(u,to,data);if(r)return r;}return '0x'+'0'.repeat(64);}
+
+async function blockNum(){
+  for(const u of ETH_RPCS){
+    const j=await fetchJSON(u,{jsonrpc:'2.0',id:1,method:'eth_blockNumber',params:[]});
+    if(j?.result)return parseInt(j.result,16);
+  }
+  return 22_500_000;
+}
+
+// Try one RPC for getLogs — returns array on success, null on error/timeout
+async function logsOnce(url,addr,topics,from,to){
+  const j=await fetchJSON(url,{jsonrpc:'2.0',id:Date.now(),method:'eth_getLogs',
+    params:[{fromBlock:'0x'+from.toString(16),toBlock:'0x'+to.toString(16),address:addr,topics}]},15000);
+  if(!j){console.warn('getLogs null',url.split('/')[2],from,to);return null;}
+  if(j.error){console.warn('getLogs err',j.error.message||j.error.code,'range',to-from);return null;}
+  if(Array.isArray(j.result))return j.result;
+  return null;
+}
+
+// Try all RPCs for a chunk; returns logs array or null
+async function getLogsChunk(addr,topics,from,to){
+  for(const u of ETH_RPCS){
+    const logs=await logsOnce(u,addr,topics,from,to);
+    if(logs!==null)return logs;  // success — even empty array is valid
+  }
+  return null;  // all RPCs failed for this chunk
+}
+
+// Adaptive chunked scan — tracks skipped ranges (logged if any)
+let scanSkips=0;
+async function scanLogs(addr,topics,fromBlock,toBlock,onProg){
+  const all=[];let chunk=5000,cur=fromBlock,retries=0;
+  const total=Math.max(toBlock-fromBlock,1);
+  while(cur<=toBlock){
+    const end=Math.min(cur+chunk-1,toBlock);
+    const logs=await getLogsChunk(addr,topics,cur,end);
+    if(logs===null){
+      retries++;
+      chunk=Math.max(Math.floor(chunk/2),500);
+      console.warn(`chunk fail #${retries}, reducing to ${chunk} blocks`);
+      if(retries>6){console.warn('skipping stuck chunk',cur,end);scanSkips++;cur=end+1;retries=0;}
+      continue;
+    }
+    retries=0;all.push(...logs);
+    if(onProg)onProg(cur,end,(end-fromBlock)/total,all.length,logs);
+    cur=end+1;
+    if(chunk<50000)chunk=Math.min(chunk*2,50000);
+  }
+  return all;
+}
+
+// ════════════════════════════════════════════════════════════════════
+// CONTRACT HELPERS
+// ════════════════════════════════════════════════════════════════════
+const AP=a=>a.toLowerCase().replace('0x','').padStart(64,'0');
+const UP=n=>BigInt(n).toString(16).padStart(64,'0');
+const DH=h=>{const s=(h||'').replace('0x','');return(s&&!/^0+$/.test(s))?BigInt('0x'+s.slice(0,64)):0n;};
+
+async function getLockingController(){
+  const r=await rpc(GATEWAY,'bf40fac1'+'0000000000000000000000000000000000000000000000000000000000000020'+'0000000000000000000000000000000000000000000000000000000000000011'+'6c6f636b696e67436f6e74726f6c6c6572000000000000000000000000000000');
+  if(!r||/^0x0*$/.test(r))return null;return'0x'+r.replace(/^0x/,'').slice(-40);
+}
+async function getUnwindingModule(lc){if(!lc)return null;const r=await rpc(lc,'e37d01b1');if(!r||/^0x0*$/.test(r))return null;return'0x'+r.replace(/^0x/,'').slice(-40);}
+async function getRate(lc,ep){if(!lc)return 10n**18n;let r=DH(await rpc(lc,'10821ff9'+ep.toString(16).padStart(64,'0')));if(r===0n&&ep===13)r=REF_RATE_13W;return r||10n**18n;}
+async function fetchAllRates(lc){const rates={};await Promise.all(LIUSD_EPOCHS.map(async({ep})=>{rates[ep]=await getRate(lc,ep);}));return rates;}
+const bE20   =async(tok,u)=>DH(await rpc(tok,'70a08231'+AP(u)));
+const bE1155 =async(um,u,ts)=>DH(await rpc(um,'00fdd58e'+AP(u)+UP(ts)));
+const tSupply=async tok=>DH(await rpc(tok,'18160ddd'));
+async function protocolSupplyUsd(rates){
+  const byEpoch={};
+  await Promise.all(LIUSD_EPOCHS.map(async({ep,addr})=>{
+    const s=await tSupply(addr);
+    byEpoch[ep]=s2u(s,rates[ep]||10n**18n);
+  }));
+  return{byEpoch,total:Object.values(byEpoch).reduce((a,b)=>a+b,0)};
+}
+function supplyTotal(b){return b?.total??Object.values(b?.byEpoch||{}).reduce((a,v)=>a+(v||0),0);}
+function bucketVal(r,ep){return(r.buckets&&r.buckets[ep])||0;}
+function bucketOther(r){return Object.entries(r.buckets||{}).reduce((s,[ep,v])=>DISPLAY_EPOCHS.includes(Number(ep))?s:s+(v||0),0);}
+function cellUsd(v){return v>0.01?`<span class="nv">${f2(v)}</span>`:'<span class="mu">—</span>';}
+
+// Single-shot getLogs (LAUNCH→latest) — reliable for UnwindingModule; chunked scan can skip ranges
+async function fetchLogsFull(addr,topics,timeoutMs=60000){
+  const body={jsonrpc:'2.0',id:Date.now(),method:'eth_getLogs',params:[{address:addr,topics,fromBlock:'0x'+LAUNCH.toString(16),toBlock:'latest'}]};
+  for(const url of ETH_RPCS){
+    const j=await fetchJSON(url,body,timeoutMs);
+    if(j&&!j.error&&Array.isArray(j.result))return j.result;
+    if(j?.error)console.warn('fetchLogsFull',url.split('/')[2],(j.error.message||'').slice(0,80));
+  }
+  return null;
+}
+
+async function buildUnwindMap(umAddr,holders,toBlock){
+  const unwindMap=new Map();
+  if(!umAddr)return unwindMap;
+  const end=toBlock||await blockNum();
+  let uwLogs=await fetchLogsFull(umAddr,[T_UW],90000);
+  if(!uwLogs?.length)uwLogs=await scanLogs(umAddr,[T_UW],LAUNCH,end);
+  uwLogs.forEach(log=>applyUwLog(unwindMap,holders,log));
+  let wdLogs=await fetchLogsFull(umAddr,[T_WD],90000);
+  if(!wdLogs?.length)wdLogs=await scanLogs(umAddr,[T_WD],LAUNCH,end);
+  wdLogs.forEach(log=>applyWdLog(unwindMap,log));
+  return unwindMap;
+}
+
+function mergeUnwind(list){
+  const m=new Map();
+  (list||[]).forEach(p=>{if(p?.user!=null&&p?.startTs!=null)m.set(`${normAddr(p.user)}_${p.startTs}`,{...p,user:normAddr(p.user)});});
+  return[...m.values()];
+}
+
+async function balBatch(umAddr,positions){
+  const out=[];
+  for(let i=0;i<positions.length;i+=BAL_BATCH){
+    const batch=positions.slice(i,i+BAL_BATCH);
+    const bals=await Promise.all(batch.map(p=>bE1155(umAddr,p.user,p.startTs)));
+    batch.forEach((p,j)=>{
+      const ut=unlockTs(p.startTs,p.epochs);
+      const usd=r2u(bals[j]);
+      if(usd>0.01&&valTs(ut))out.push({...p,unlockTs:ut,usd});
+    });
+    if(i+BAL_BATCH<positions.length)await new Promise(r=>setTimeout(r,80));
+  }
+  return out;
+}
+
+async function unwindPositionsFromMap(umAddr,unwindMap){
+  if(!umAddr)return [];
+  return balBatch(umAddr,[...unwindMap.values()]);
+}
+
+// M31 unwinding — sequential on-chain fetch (batched RPC was dropping 4 of 5 PLF positions)
+async function fetchM31Unwinding(umAddr,toBlock){
+  if(!umAddr)return[];
+  const m31Set=new Set(M31_ADDRS.map(normAddr));
+  const end=toBlock||await blockNum();
+  let uwLogs=await fetchLogsFull(umAddr,[T_UW],90000);
+  if(!uwLogs?.length)uwLogs=await scanLogs(umAddr,[T_UW],LAUNCH,end);
+  let wdLogs=await fetchLogsFull(umAddr,[T_WD],90000);
+  if(!wdLogs?.length)wdLogs=await scanLogs(umAddr,[T_WD],LAUNCH,end);
+  const active=new Map();
+  uwLogs.forEach(log=>{const p=parseUwLog(log);if(m31Set.has(normAddr(p.user)))applyUwLog(active,new Set(),log);});
+  wdLogs.forEach(log=>applyWdLog(active,log));
+  const out=[];
+  for(const p of active.values()){
+    let bal=await bE1155(umAddr,p.user,p.startTs);
+    if(bal===0n){await new Promise(r=>setTimeout(r,150));bal=await bE1155(umAddr,p.user,p.startTs);}
+    const ut=unlockTs(p.startTs,p.epochs);
+    const usd=r2u(bal);
+    if(usd>0.01&&valTs(ut))out.push({...p,unlockTs:ut,usd});
+  }
+  const plfSum=out.filter(p=>normAddr(p.user)===normAddr(PLF_ADDR)).reduce((s,p)=>s+p.usd,0);
+  console.log(`M31 fetch: ${out.length} positions, PLF $${plfSum.toFixed(0)}`);
+  return out;
+}
+
+async function fetchM31UnwindingRetry(umAddr,toBlock){
+  for(let n=1;n<=3;n++){
+    const pos=await fetchM31Unwinding(umAddr,toBlock);
+    const plf=pos.filter(p=>normAddr(p.user)===normAddr(PLF_ADDR)).reduce((s,p)=>s+p.usd,0);
+    if(plf>=M31_PLF_MIN)return pos;
+    console.warn(`M31 retry ${n}/3 — PLF only $${plf.toFixed(0)}`);
+    await new Promise(r=>setTimeout(r,400*n));
+  }
+  return fetchM31Unwinding(umAddr,toBlock);
+}
+
+function buildM31Snapshot(lockPositions,m31Unwind){
+  const wallets={};
+  M31_ADDRS.forEach(a=>{
+    const aN=normAddr(a);
+    const lk=(lockPositions||[]).find(r=>normAddr(r.user)===aN)?.total||0;
+    const uw=(m31Unwind||[]).filter(p=>normAddr(p.user)===aN).reduce((s,p)=>s+p.usd,0);
+    wallets[a]=lk+uw;
+  });
+  const plf=wallets[PLF_ADDR]||0;
+  const total=Object.values(wallets).reduce((s,v)=>s+v,0);
+  return{total,wallets,plf,unwindCount:(m31Unwind||[]).length,verified:plf>=M31_PLF_MIN};
+}
+
+function injectM31Unwind(unwindPositions,m31Unwind){
+  const m31Set=new Set(M31_ADDRS.map(normAddr));
+  const rest=(unwindPositions||[]).filter(p=>!m31Set.has(normAddr(p.user)));
+  return mergeUnwind([...rest,...m31Unwind]);
+}
+
+// ════════════════════════════════════════════════════════════════════
+// PERSISTENT CACHE (two layers)
+// ════════════════════════════════════════════════════════════════════
+function loadDB(key){try{const d=JSON.parse(localStorage.getItem(key)||'null');if(d?.v)return d;}catch(_){}return null;}
+function saveDB(key,obj){try{localStorage.setItem(key,JSON.stringify({ts:Date.now(),...obj}));}catch(_){}}
+function clearDB(key){try{localStorage.removeItem(key);}catch(_){}}
+
+// ADDR_DB: permanent — never expires, cleared only by Full Rescan
+// {v:2, ts, lastBlock, addresses:[], lcAddr, umAddr, activeDetails:[]}
+// POS_DB: balance data — refreshed on demand
+// {v:2, ts, block, lockPositions:[], unwindPositions:[], scannedCount, rates:{r2,r4,r13}, lcAddr, umAddr, activeDetails:[]}
+
+// ════════════════════════════════════════════════════════════════════
+// FORMAT
+// ════════════════════════════════════════════════════════════════════
+const f2=v=>'$'+Number(v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+const fK=v=>{const n=Number(v);return n>=1e6?'$'+(n/1e6).toFixed(2)+'M':n>=1e3?'$'+(n/1e3).toFixed(1)+'K':f2(n);};
+function fTs(ts){if(ts==null||!Number.isFinite(ts)||ts<=0)return'—';const d=new Date(ts*1000);return isNaN(d.getTime())?'—':d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});}
+function fTsS(ts){if(ts==null||!Number.isFinite(ts)||ts<=0)return'—';const d=new Date(ts*1000);return isNaN(d.getTime())?'—':d.toLocaleDateString('en-US',{month:'short',day:'numeric'});}
+const fDate=fTs;const fDS=fTsS;
+const short=a=>`${a.slice(0,6)}…${a.slice(-4)}`;
+const aLink=a=>`<a href="https://etherscan.io/address/${a}" target="_blank">${short(a)}</a>`;
+const s2u=(s,r)=>Number(s*r/(10n**18n))/1e18;
+const r2u=r=>Number(r)/1e18; // UnwindingModule balance is iUSD (≈$1)
+const unlockTs=(st,ep)=>Number((BigInt(Math.floor(st))/BigInt(EPOCH)+1n+BigInt(ep))*BigInt(EPOCH));
+const valTs=ts=>Number.isFinite(ts)&&ts>1e9;
+const normAddr=a=>(a||'').toLowerCase();
+const nowSec=()=>Math.floor(Date.now()/1000);
+const isReportable=ts=>ts>=nowSec()-STALE_GRACE; // hide if unlock >7 days ago
+const isUpcoming=ts=>ts>=nowSec(); // schedule/chart: today + future only
+const isM31=u=>!!KNOWN[normAddr(u)];
+const byValue=(a,b)=>(b.total||b.usd||0)-(a.total||a.usd||0);
+function walletTotal(addr,lkRows,uwRows){
+  const a=normAddr(addr);
+  const lk=(lkRows||[]).find(r=>normAddr(r.user)===a)?.total||0;
+  const uw=(uwRows||[]).filter(p=>normAddr(p.user)===a).reduce((s,p)=>s+p.usd,0);
+  return lk+uw;
+}
+function m31Total(lkRows,uwRows,m31Snap){
+  if(m31Snap&&(m31Snap.verified||m31Snap.plf>=M31_PLF_MIN))return m31Snap.total;
+  return M31_ADDRS.reduce((s,a)=>s+walletTotal(a,lkRows,uwRows),0);
+}
+function addHolder(holders,addr){if(addr)holders.add(normAddr(addr));}
+function absorbTransferLogs(logs,holders){
+  (logs||[]).forEach(log=>{
+    if(log.topics?.[2])addHolder(holders,'0x'+log.topics[2].slice(26));
+    if(log.topics?.[1]&&log.topics[1]!==Z32)addHolder(holders,'0x'+log.topics[1].slice(26));
+  });
+}
+function topN(rows,n){return(rows||[]).slice(0,n);}
+function tableFootnote(total,shown,label,colspan){return total>shown?`<tr><td colspan="${colspan}" style="padding:10px 14px;font-size:11px;color:#64748b;background:#f8fafc">Showing top <b>${shown}</b> of <b>${total}</b> ${label} by value · card totals use full on-chain data</td></tr>`:'';}
+function parseUwLog(log){const raw=log.data.slice(2);return{user:normAddr('0x'+raw.slice(24,64)),startTs:Number(BigInt(log.topics[1])),epochs:Number(BigInt('0x'+raw.slice(128,192)))};}
+function parseWdLog(log){const raw=log.data.slice(2);return{user:normAddr('0x'+raw.slice(88,128)),startTs:Number(BigInt('0x'+raw.slice(0,64)))};}
+function applyUwLog(unwindMap,holders,log){try{const p=parseUwLog(log);if(!valTs(p.startTs)||!Number.isFinite(p.epochs)||p.epochs<1)return;addHolder(holders,p.user);unwindMap.set(`${p.user}_${p.startTs}`,p);}catch(_){}}
+function applyWdLog(unwindMap,log){try{const p=parseWdLog(log);unwindMap.delete(`${p.user}_${p.startTs}`);}catch(_){}}
+function collectPcStarts(pcLogs){const m=new Map();(pcLogs||[]).forEach(log=>{if(!log.topics?.[2])return;const u=normAddr('0x'+log.topics[2].slice(26));const st=Number(BigInt(log.topics[1]));if(valTs(st)&&(!m.has(u)||st<m.get(u)))m.set(u,st);});return m;}
+function seedM31(holders){M31_ADDRS.forEach(a=>addHolder(holders,a));}
+
+// Refresh M31 wallet ERC-20 balances directly (all liUSD durations)
+async function refreshM31Locks(lockPositions,rates){
+  for(const u of M31_ADDRS){
+    const bals=await Promise.all(LIUSD_EPOCHS.map(({addr})=>bE20(addr,u)));
+    const buckets={};let total=0;
+    LIUSD_EPOCHS.forEach(({ep},i)=>{const v=s2u(bals[i],rates[ep]);if(v>0.01){buckets[ep]=v;total+=v;}});
+    const i=lockPositions.findIndex(r=>normAddr(r.user)===normAddr(u));
+    if(total>0.01){const row={user:normAddr(u),buckets,total};if(i>=0)lockPositions[i]=row;else lockPositions.push(row);}
+    else if(i>=0)lockPositions.splice(i,1);
+  }
+}
+const bkN=ep=>ep+'w';
+const bkC=ep=>ep<=2?'b2':ep<=4?'b4':ep<=8?'bx':'b13';
+function tLeft(ts){const d=ts-Math.floor(Date.now()/1000);if(d<=0)return{lbl:'Unlocked',cls:'ready',pct:100};const dy=Math.floor(d/86400),h=Math.floor((d%86400)/3600);return{lbl:dy>0?`${dy}d ${h}h`:`${h}h`,cls:dy<7?'soon':'',pct:null};}
+function fAxis(v){if(v===0)return'$0';if(v>=1e6)return'$'+(v/1e6).toFixed(1)+'M';if(v>=1e3)return'$'+(v/1e3).toFixed(0)+'K';return'$'+Math.round(v);}
+function niceMax(v){if(v<=0)return 1000;const m=Math.pow(10,Math.floor(Math.log10(v)));const n=v/m;if(n<=1)return m;if(n<=2)return 2*m;if(n<=2.5)return 2.5*m;if(n<=5)return 5*m;return 10*m;}
+function fAge(ts){const m=Math.round((Date.now()-ts)/60000);return m<60?`${m}m ago`:m<1440?`${Math.round(m/60)}h ago`:`${Math.round(m/1440)}d ago`;}
+
+// ════════════════════════════════════════════════════════════════════
+// PROGRESS UI
+// ════════════════════════════════════════════════════════════════════
+const SDEFS=[
+  {id:'contracts',name:'Contract addresses'},
+  {id:'mints',    name:'liUSD Transfer events — user discovery'},
+  {id:'positions',name:'PositionCreated events — unlock dates'},
+  {id:'unwinding',name:'UnwindingStarted + Withdrawal'},
+  {id:'balances', name:'Current balances'},
+  {id:'build',    name:'Build analytics'},
+];
+let SS={};
+function initS(){SS={};SDEFS.forEach(s=>{SS[s.id]={st:'wait',det:'',extra:'',pct:null};});}
+function setS(id,st,det,extra,pct){SS[id]={st,det:det||'',extra:extra||'',pct:pct??null};renderProg();}
+function renderProg(){
+  const icon={wait:'○',active:'⟳',done:'✓',skip:'→'};
+  const cls={wait:'wait',active:'active',done:'done',skip:'skip'};
+  document.getElementById('sl').innerHTML=SDEFS.map((d,i)=>{
+    const s=SS[d.id];
+    let bar='',extra='';
+    if(s.st==='active'&&s.pct!==null)
+      bar=`<div class="mb"><div class="mb-fill" style="width:${(s.pct*100).toFixed(0)}%"></div></div>`;
+    if(s.extra) extra=s.extra; // raw HTML for sub-bars etc.
+    return`<div class="sr">
+      <div class="si ${cls[s.st]||'wait'}">${icon[s.st]||'○'}</div>
+      <div class="sr-body">
+        <div class="nm${s.st==='wait'?' dim':''}">${i+1}. ${d.name}</div>
+        ${s.det?`<div class="det">${s.det}</div>`:''}
+        ${bar}${extra}
+      </div>
+    </div>`;
+  }).join('');
+  const nDone=Object.values(SS).filter(s=>s.st==='done'||s.st==='skip').length;
+  const aS=Object.values(SS).find(s=>s.st==='active');
+  const pct=Math.min(99,Math.round((nDone/6+(aS?.pct||0)/6)*100));
+  document.getElementById('pb').style.width=pct+'%';
+  document.getElementById('pp').textContent=pct+'%';
+  const ai=SDEFS.findIndex(d=>SS[d.id].st==='active');
+  document.getElementById('pt').textContent=ai>=0?`Stage ${ai+1}/${SDEFS.length}: ${SDEFS[ai].name}`:'Finalising…';
+}
+const showProg=()=>document.getElementById('prog-panel').style.display='block';
+const hideProg=()=>document.getElementById('prog-panel').style.display='none';
+
+// ════════════════════════════════════════════════════════════════════
+// SVG CHART
+// ════════════════════════════════════════════════════════════════════
+function drawChart(uwRows,walletLocked){
+  const wrap=document.getElementById('chart-svg-wrap');
+  const W=Math.max(wrap.clientWidth-4,500);
+  const H=300,ML=72,MR=24,MT=18,MB=60,CW=W-ML-MR,CH=H-MT-MB;
+  const now=nowSec();
+  const cMap=new Map();
+  (uwRows||[]).filter(p=>valTs(p.unlockTs)&&isUpcoming(p.unlockTs)).forEach(p=>{const k=p.unlockTs;const e=cMap.get(k)||{usd:0,cnt:0,eps:[]};e.usd+=p.usd;e.cnt++;e.eps.push(p.epochs);cMap.set(k,e);});
+  const dates=[...cMap.keys()].filter(valTs).sort((a,b)=>a-b);
+  if(!dates.length){wrap.innerHTML=walletLocked>0?`<div class="loading">${fK(walletLocked)} in wallet locks — no upcoming unlock dates</div>`:'<div class="loading">No upcoming unlock dates (past dates hidden)</div>';return;}
+  const maxV=Math.max(...dates.map(d=>cMap.get(d)?.usd||0),1);
+  const yMax=niceMax(maxV),n=dates.length,slotW=CW/Math.max(n,1),bW=Math.max(Math.min(slotW*.4,28),3);
+  let s=`<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:${H}px">`;
+  for(let i=0;i<=5;i++){const v=yMax/5*i,y=MT+CH-(v/yMax*CH);s+=`<line x1="${ML}" y1="${y.toFixed(1)}" x2="${W-MR}" y2="${y.toFixed(1)}" stroke="${i===0?'#e2e8f0':'#f1f5f9'}" stroke-width="${i===0?1.5:1}"/>`;s+=`<text x="${ML-7}" y="${(y+4).toFixed(0)}" text-anchor="end" font-size="10" fill="#94a3b8" font-family="-apple-system,sans-serif">${fAxis(v)}</text>`;}
+  dates.forEach((date,i)=>{
+    const cx=ML+slotW*(i+0.5),c=cMap.get(date),past=date<now;
+    if(c){const h=Math.max(2,c.usd/yMax*CH),y=MT+CH-h,bx=cx-bW/2;s+=`<rect x="${bx.toFixed(1)}" y="${y.toFixed(1)}" width="${bW.toFixed(1)}" height="${h.toFixed(1)}" fill="#3b82f6" opacity="${past?.4:1}" rx="2"><title>Confirmed Unlock\n${fDate(date)}\n${f2(c.usd)} · ${c.cnt} pos</title></rect>`;if(c.usd/yMax>0.06)s+=`<text x="${(bx+bW/2).toFixed(0)}" y="${(y-4).toFixed(0)}" text-anchor="middle" font-size="9" fill="#3b82f6" font-weight="600">${fK(c.usd)}</text>`;}
+    const lx=cx,ly=H-MB+15,rot=n>6?-45:0,anch=n>6?'end':'middle';
+    s+=`<text x="${lx.toFixed(0)}" y="${ly}" text-anchor="${anch}" transform="rotate(${rot},${lx.toFixed(0)},${ly})" font-size="${n>10?8:9.5}" fill="#64748b" font-family="-apple-system,sans-serif">${fDS(date)}</text>`;
+  });
+  s+=`<line x1="${ML}" y1="${MT}" x2="${ML}" y2="${H-MB}" stroke="#e2e8f0" stroke-width="1.5"/><line x1="${ML}" y1="${H-MB}" x2="${W-MR}" y2="${H-MB}" stroke="#e2e8f0" stroke-width="1.5"/>`;
+  if(dates.length>1){const tMin=dates[0],tMax=dates[dates.length-1];if(now>tMin&&now<tMax){const tx=(ML+(now-tMin)/(tMax-tMin)*CW).toFixed(1);s+=`<line x1="${tx}" y1="${MT}" x2="${tx}" y2="${H-MB}" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="4,3"/><text x="${(parseFloat(tx)+4).toFixed(0)}" y="${MT+11}" font-size="9" fill="#ef4444">Today</text>`;}}
+  s+='</svg>';wrap.innerHTML=s;
+}
+
+// ════════════════════════════════════════════════════════════════════
+// RENDER
+// ════════════════════════════════════════════════════════════════════
+function render(data){
+  const{block,lcAddr,umAddr,lockPositions,unwindPositions,scannedCount,rates,supplyBreakdown,m31Snapshot}=data;
+  const now=nowSec();
+  document.getElementById('f-lc').textContent=lcAddr?short(lcAddr):'⚠';
+  document.getElementById('f-um').textContent=umAddr?short(umAddr):'⚠';
+  document.getElementById('f-blk').textContent=(block||0).toLocaleString();
+
+  const lkRows=[...(lockPositions||[]).filter(r=>r.total>0.01)].sort(byValue);
+  const totLkScanned=lkRows.reduce((s,r)=>s+r.total,0);
+  const uwAll=mergeUnwind(unwindPositions||[]).filter(p=>p.usd>0.01&&valTs(p.unlockTs));
+  const uwRows=[...uwAll.filter(p=>isReportable(p.unlockTs))].sort(byValue);
+  const uwUpcoming=[...uwRows.filter(p=>isUpcoming(p.unlockTs))].sort(byValue);
+  const totUw=uwRows.reduce((s,p)=>s+p.usd,0);
+  const supplyTot=supplyBreakdown?supplyTotal(supplyBreakdown):0;
+  const totWallet=supplyTot>0?supplyTot:totLkScanned;
+  const totAll=supplyTot>0?(supplyTot+totUw):(totLkScanned+totUw);
+
+  document.getElementById('f-supply').textContent=supplyTot>0?f2(supplyTot):'—';
+  document.getElementById('nav-locks').textContent=totWallet>0?fK(totWallet):'—';
+  document.getElementById('nav-unwind').textContent=totUw>0?fK(totUw):'—';
+  document.getElementById('type-guide-txt').innerHTML=`<b>Where to look:</b> <a href="#sec-locks">Wallet Locks</a> = liUSD in wallets (${fK(totWallet)}) &nbsp;·&nbsp; <a href="#sec-unwind">Unwinding</a> = mid-unlock iUSD (${fK(totUw)}) &nbsp;·&nbsp; <a href="#sec-m31">M31</a> = ${fK(m31Total(lkRows,uwAll,m31Snapshot))} &nbsp;·&nbsp; Protocol ${fK(totAll)}`;
+
+  // Wallet locks table — top N by value (full list used for totals)
+  const lkShow=topN(lkRows,TOP_N);
+  document.getElementById('locks-nav').textContent=f2(totWallet);
+  document.getElementById('badge-locks').textContent=lkRows.length>TOP_N?`top ${TOP_N} of ${lkRows.length}`:`${lkRows.length} holders`;
+  document.getElementById('locks-body').innerHTML=lkShow.length
+    ?lkShow.map((r,i)=>{const lbl=KNOWN[normAddr(r.user)]?KNOWN[normAddr(r.user)][0]:'';const oth=bucketOther(r);return`<tr><td class="mu">${i+1}</td><td>${aLink(r.user)}${lbl?`<span class="klbl">${lbl}</span>`:''}</td>${DISPLAY_EPOCHS.map(ep=>`<td class="r">${cellUsd(bucketVal(r,ep))}</td>`).join('')}<td class="r">${oth>0.01?cellUsd(oth):'<span class="mu">—</span>'}</td><td class="r"><span class="nv" style="color:#2563eb">${f2(r.total)}</span></td><td>${lbl?`<span class="tag tb">${lbl}</span>`:'<span class="mu">—</span>'}</td>`;}).join('')+tableFootnote(lkRows.length,lkShow.length,'wallet holders',10)
+    :'<tr><td colspan="10" class="loading">No active liUSD positions — click ⟳ Refresh Balances</td></tr>';
+
+  // Unwinding table — top N by value (full list used for totals)
+  const uwShow=topN(uwRows,TOP_N);
+  let nextTs=Infinity;uwUpcoming.forEach(p=>{if(p.unlockTs<nextTs)nextTs=p.unlockTs;});
+  document.getElementById('unwind-nav').textContent=f2(totUw);
+  document.getElementById('badge-unwind').textContent=uwRows.length>TOP_N?`top ${TOP_N} of ${uwRows.length}`:`${uwRows.length} positions`;
+  document.getElementById('unwind-body').innerHTML=uwShow.length
+    ?uwShow.map((p,i)=>{const tl=tLeft(p.unlockTs);const pct=tl.pct!==null?tl.pct:Math.min(100,Math.max(0,(now-p.startTs)/(p.unlockTs-p.startTs)*100));const lbl=KNOWN[normAddr(p.user)]?KNOWN[normAddr(p.user)][0]:'';const stag=tl.pct===100?`<span class="tag tg"><span class="dot"></span>Ready</span>`:tl.cls==='soon'?`<span class="tag ta"><span class="dot"></span>Soon</span>`:`<span class="tag tb"><span class="dot"></span>Unwinding</span>`;return`<tr><td class="mu">${i+1}</td><td>${aLink(p.user)}${lbl?`<span class="klbl">${lbl}</span>`:''}</td><td class="r"><span class="nv">${f2(p.usd)}</span></td><td><span class="buck ${bkC(p.epochs)}">${bkN(p.epochs)}</span></td><td>${fDS(p.startTs)}</td><td style="font-weight:600">${fDate(p.unlockTs)}</td><td><span class="cd ${tl.cls}">${tl.lbl}</span><div class="pbar-w"><div class="pbar${tl.pct===100?' done':''}" style="width:${pct.toFixed(0)}%"></div></div></td><td>${stag}</td></tr>`;}).join('')+tableFootnote(uwRows.length,uwShow.length,'unwinding positions',8)
+    :'<tr><td colspan="8" class="loading">No active unwinding positions — click ⟳ Refresh Balances</td></tr>';
+
+  // Schedule — forward-looking dates only
+  drawChart(uwRows,totWallet);
+  const cMap=new Map();
+  uwUpcoming.forEach(p=>{const k=p.unlockTs;const e=cMap.get(k)||{usd:0,cnt:0,eps:new Set()};e.usd+=p.usd;e.cnt++;e.eps.add(p.epochs);cMap.set(k,e);});
+  const allD=[...cMap.keys()].filter(valTs).sort((a,b)=>a-b);
+  const totC=allD.reduce((s,k)=>s+(cMap.get(k)?.usd||0),0);
+  document.getElementById('sched-ttl').textContent=f2(totC)+' upcoming';
+  document.getElementById('badge-sched').textContent=allD.length+' dates';
+  let schedRows=allD.map(k=>{const c=cMap.get(k);const eps=[...c.eps].sort((a,b)=>a-b);const tags=eps.map(e=>`<span class="buck ${bkC(e)}" style="font-size:9px">${bkN(e)}</span>`).join(' ');const soon=k<now+7*86400;return`<tr style="${soon?'background:#fffbeb':''}"><td><b>${fDate(k)}</b></td><td class="r"><b>${f2(c.usd)}</b></td><td class="r">${c.cnt}</td><td class="r" colspan="3"><span class="mu" style="font-size:11px">—</span></td><td>${tags}</td></tr>`;}).join('');
+  if(totWallet>0.01)schedRows+=`<tr style="background:#f8fafc"><td><b>Wallet-held locks</b><br><span style="font-size:10px;color:#64748b">On-chain liUSD supply (unlock not started)</span></td><td class="r"><span class="mu">—</span></td><td class="r"><span class="mu">—</span></td><td class="r" colspan="3"><b style="color:#2563eb">${f2(totWallet)}</b> <span style="font-size:10px;color:#64748b">(${lkRows.length} holders in scan${totLkScanned<totWallet*0.97?`, scanned ${fK(totLkScanned)}`:''})</span></td><td><span class="buck bx">mixed</span></td></tr>`;
+  document.getElementById('sched-body').innerHTML=schedRows||'<tr><td colspan="7" class="loading">No scheduled unlock dates</td></tr>';
+
+  // Summary cards — supply + unwinding (burned liUSD tracked separately in UnwindingModule)
+  document.getElementById('c-locked').textContent=f2(totWallet);
+  document.getElementById('c-locked-sub').textContent=supplyTot>0?'on-chain supply · 1w–13w':'from address scan';
+  document.getElementById('c-unwind').textContent=f2(totUw);
+  document.getElementById('c-unwind-sub').textContent=`${uwRows.length} position${uwRows.length!==1?'s':''}${totAll>0?' · '+((100*totUw/totAll).toFixed(0))+'% of protocol':''}`;
+  document.getElementById('c-total').textContent=f2(totAll);
+  const aA=new Set([...lkRows.map(r=>r.user),...uwRows.map(p=>p.user)]);
+  let totalSub=`${fK(totWallet)} wallet + ${fK(totUw)} unwinding`;
+  if(totLkScanned<totWallet*0.97)totalSub+=` · scanned ${fK(totLkScanned)}`;
+  totalSub+=` · ${aA.size} addresses`;
+  document.getElementById('c-total-sub').textContent=totalSub;
+  if(nextTs<Infinity){const tl=tLeft(nextTs);document.getElementById('c-next').textContent=tl.lbl==='Unlocked'?'Now':tl.lbl;document.getElementById('c-next-sub').textContent=fDate(nextTs);}
+  else{document.getElementById('c-next').textContent='—';document.getElementById('c-next-sub').textContent='No pending unlocks';}
+  const m31=m31Total(lkRows,uwAll,m31Snapshot);
+  document.getElementById('c-m31').textContent=f2(m31);
+  const m31Warn=m31Snapshot&&!m31Snapshot.verified?' ⚠ incomplete':'';
+  document.getElementById('c-m31-sub').textContent=totAll>0?`${((m31/totAll)*100).toFixed(1)}% of ${fK(totAll)}${m31Warn}`:'—';
+
+  // Analysis
+  const bD=d=>uwUpcoming.filter(p=>p.unlockTs<=now+d*86400).reduce((s,p)=>s+p.usd,0);
+  document.getElementById('a-7d').textContent=f2(bD(7));
+  document.getElementById('a-30d').textContent=f2(bD(30));
+  document.getElementById('a-90d').textContent=f2(bD(90));
+  document.getElementById('a-far').textContent=f2(uwUpcoming.filter(p=>p.unlockTs>now+90*86400).reduce((s,p)=>s+p.usd,0));
+  const m31w=m31Snapshot?.wallets||{};
+  [['a-plf','0x4f5d9d62b17e2a5773e28cdf068d211fb5a0cc8c'],['a-v2a','0x9a1ae3e06acbe83afff4cfa4421eced7cdc90184'],['a-v2b','0xe9da68d9636284f1f41255e84068aed0767eacef'],['a-d1','0x361dc9c21ad1016c0da11bf88d0352b9fc412de4']].forEach(([id,addr])=>{const v=m31w[addr]??walletTotal(addr,lkRows,uwAll);document.getElementById(id).textContent=v>0.01?f2(v):'—';});
+  if(supplyBreakdown?.byEpoch){
+    const rows=LIUSD_EPOCHS.map(({ep})=>{const v=supplyBreakdown.byEpoch[ep]||0;if(v<=0.01)return'';return`<div class="ana-row"><span><span class="buck ${bkC(ep)}">${ep}w</span></span><span class="nv">${f2(v)}</span></div>`;}).join('');
+    document.getElementById('a-supply-rows').innerHTML=rows||'<div class="ana-row"><span class="mu">No supply</span><span>—</span></div>';
+    document.getElementById('a-supply').textContent=f2(supplyTot);
+  }else{
+    document.getElementById('a-supply-rows').innerHTML='<div class="ana-row"><span class="mu">Run Refresh for supply</span><span>—</span></div>';
+    document.getElementById('a-supply').textContent=totLkScanned>0?f2(totLkScanned):'—';
+  }
+  if(rates){
+    const rv=Object.values(rates).map(x=>BigInt(x||0)).filter(x=>x>0n);
+    if(rv.length){const avg=rv.reduce((s,x)=>s+Number(x)/1e18,0)/rv.length;document.getElementById('a-rate').textContent=avg.toFixed(6);}
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════
+// MAIN RUN   mode: 'load' | 'refresh' | 'fullscan'
+// ════════════════════════════════════════════════════════════════════
+let running=false;
+async function run(mode){
+  if(running)return;
+
+  // 'load': use POS_DB if fresh, else fallback to 'refresh'
+  if(mode==='load'){
+    const pos=loadDB(POS_DB);
+    if(pos?.v===9){
+      if(pos.activeDetails)delete pos.activeDetails;
+      const ageMin=Math.round((Date.now()-pos.ts)/60000);
+      const adb=loadDB(ADDR_DB);
+      const m31ok=pos.m31Snapshot?.verified||(pos.m31Snapshot?.plf||0)>=M31_PLF_MIN;
+      if(!pos.supplyBreakdown?.byEpoch||ageMin>15||!m31ok){
+        hideProg();
+        await run('refresh');
+        return;
+      }
+      render(pos);
+      document.getElementById('ts-lbl').innerHTML=`Balances from ${fAge(pos.ts)}<br>Block ${(pos.block||0).toLocaleString()}`;
+      if(adb){document.getElementById('db-banner').style.display='flex';document.getElementById('db-txt').textContent=`📦 Address database: ${adb.addresses?.length||0} addresses · built ${fAge(adb.ts)} · last scanned block ${(adb.lastBlock||0).toLocaleString()}`;}
+      document.getElementById('f-db').textContent=adb?`${adb.addresses?.length||0} addrs`:'none';
+      document.getElementById('btn-ref-bal').style.display='inline-block';
+      document.getElementById('btn-full').style.display='inline-block';
+      hideProg();
+      return;
+    }
+    // no POS_DB → only use ADDR_DB if it actually has addresses
+    const adbCheck=loadDB(ADDR_DB);
+    mode=(adbCheck?.addresses?.length>0)?'refresh':'fullscan';
+  }
+
+  running=true;
+  document.getElementById('db-banner').style.display='none';
+  document.getElementById('stale-bar').style.display='none';
+  document.getElementById('btn-ref-bal').style.display='none';
+  document.getElementById('btn-full').style.display='none';
+  const btn=document.getElementById('btn-main');
+  btn.disabled=true;
+  document.getElementById('btn-spin').style.display='inline-block';
+  document.getElementById('btn-lbl').textContent=mode==='fullscan'?'Full scanning…':'Refreshing…';
+  initS();showProg();
+  scanSkips=0;
+
+  try{
+    // ── Stage 1: Contracts ──
+    setS('contracts','active','Resolving contract addresses…');
+    const[curBlock,lcAddr]=await Promise.all([blockNum(),getLockingController()]);
+    const umAddr=await getUnwindingModule(lcAddr);
+    setS('contracts','done',`Block ${curBlock.toLocaleString()} | LC: ${lcAddr?short(lcAddr):'⚠'} | UM: ${umAddr?short(umAddr):'⚠'}`);
+    const totalBlocks=curBlock-LAUNCH;
+
+    // ── Stages 2-3-4: Event scanning ──
+    let holders=new Set(),pcStarts=new Map(),unwindMap=new Map();
+    seedM31(holders);
+
+    if(mode==='fullscan'){
+      // FULL SCAN — scan all blocks from LAUNCH
+
+      // Stage 2: quick RPC probe first to confirm getLogs is working
+      setS('mints','active','Probing RPC getLogs capability…',null,0);
+      const probeEnd=Math.min(LAUNCH+2000,curBlock);
+      const probeResult=await getLogsChunk(LIUSD_EPOCHS[0].addr,[T_TFR,Z32],LAUNCH,probeEnd);
+      if(probeResult===null){
+        setS('mints','done','⚠ All RPCs failed getLogs probe — check console. Results may be incomplete.');
+        console.error('getLogs probe failed on all RPCs for block range',LAUNCH,probeEnd);
+      }else{
+        console.log('✓ getLogs probe OK, got',probeResult.length,'logs in first 2000 blocks');
+      }
+
+      // Stage 2: All Transfer events (mints + secondary market) — parallel with live block counter
+      setS('mints','active','Starting parallel Transfer scan (all liUSD durations)…',null,0);
+      const mp=Object.fromEntries(LIUSD_EPOCHS.map(({ep})=>['_'+ep,{p:0,cur:LAUNCH,n:0}]));
+      setS('mints','active','Starting parallel Transfer scan (all liUSD durations)…',buildTokBars(mp,holders.size,curBlock,totalBlocks),0);
+      const scanStart=Date.now();
+
+      // Heartbeat: show elapsed time + chunk info even before first real progress
+      const hb=setInterval(()=>{
+        if(SS['mints']?.st!=='active'){clearInterval(hb);return;}
+        const secs=Math.round((Date.now()-scanStart)/1000);
+        const anyProgress=Object.values(mp).some(t=>t.p>0);
+        if(!anyProgress)setS('mints','active',
+          `Fetching chunks… ${secs}s elapsed · open DevTools console for debug info`,
+          buildTokBars(mp,holders.size,curBlock,totalBlocks),0);
+      },2500);
+
+      let lastUpd=0;
+      const updM=()=>{
+        const now=Date.now();if(now-lastUpd<300)return;lastUpd=now;
+        const avg=Object.values(mp).reduce((s,t)=>s+t.p,0)/LIUSD_EPOCHS.length;
+        setS('mints','active',
+          `Scanning blocks ${LAUNCH.toLocaleString()} → ${curBlock.toLocaleString()}`,
+          buildTokBars(mp,holders.size,curBlock,totalBlocks),
+          avg);
+      };
+
+      const xferLogs=await Promise.all(LIUSD_EPOCHS.map(({ep,addr})=>
+        scanLogs(addr,[T_TFR],LAUNCH,curBlock,(curBlk,endBlk,p,n,cl)=>{
+          absorbTransferLogs(cl,holders);
+          mp['_'+ep].p=p;mp['_'+ep].cur=endBlk;mp['_'+ep].n=n;updM();
+        })
+      ));
+      clearInterval(hb);
+      const xferTotal=xferLogs.reduce((s,l)=>s+l.length,0);
+      setS('mints','done',`${holders.size} unique addresses · ${xferTotal} Transfer events across ${LIUSD_EPOCHS.length} tokens`);
+
+      // Stage 3: PositionCreated
+      if(lcAddr){
+        setS('positions','active','Scanning PositionCreated events…',null,0);
+        let lastUpd3=0;
+        const pcLogs=await scanLogs(lcAddr,[T_PC],LAUNCH,curBlock,(cB,eB,p,n)=>{
+          const now=Date.now();if(now-lastUpd3<400)return;lastUpd3=now;
+          const blkLeft=curBlock-eB;
+          setS('positions','active',`<b>${(p*100).toFixed(0)}%</b> · Block ${eB.toLocaleString()} · ${blkLeft.toLocaleString()} blocks remaining · <b>${n}</b> events found`,null,p);
+        });
+        pcLogs.forEach(log=>{if(log.topics?.[2])addHolder(holders,'0x'+log.topics[2].slice(26));});
+        pcStarts=collectPcStarts(pcLogs);
+        setS('positions','done',`${pcLogs.length} PositionCreated events · ${pcStarts.size} wallets with lock history`);
+      }else{setS('positions','skip','Skipped — LockingController not resolved');}
+
+      // Stage 4: Unwinding — single-shot protocol-wide fetch (chunked scan misses positions)
+      if(umAddr){
+        setS('unwinding','active','Fetching all UnwindingStarted + Withdrawal events…',null,0);
+        unwindMap=await buildUnwindMap(umAddr,holders,curBlock);
+        setS('unwinding','done',`${unwindMap.size} active unwinding entries (after withdrawals)`);
+      }else{setS('unwinding','skip','Skipped — UnwindingModule not resolved');}
+
+      // (ADDR_DB is saved at the end after scan, only if holders.size > 0)
+
+    }else{
+      // REFRESH — load addresses from ADDR_DB, do incremental event scan
+      const adb=loadDB(ADDR_DB);
+      if(!adb){running=false;btn.disabled=false;document.getElementById('btn-spin').style.display='none';document.getElementById('btn-lbl').textContent='⟳ Load';await run('fullscan');return;}
+
+      holders=new Set((adb.addresses||[]).map(normAddr));
+      seedM31(holders);
+      pcStarts=new Map(Object.entries(adb.pcStarts||{}).map(([k,v])=>[normAddr(k),Number(v)]).filter(([,v])=>Number.isFinite(v)&&v>0));
+      const fromBlock=Math.max(adb.lastBlock||LAUNCH,LAUNCH)+1;
+      const newBlks=curBlock-fromBlock;
+
+      if(newBlks>0){
+        // Incremental: only scan new blocks since last scan
+        setS('mints','active',`Incremental scan: ${newBlks.toLocaleString()} new blocks (${fromBlock.toLocaleString()} → ${curBlock.toLocaleString()})…`,null,0);
+        let lastUpdI=0;
+        const updI=(p,n)=>{const now=Date.now();if(now-lastUpdI<500)return;lastUpdI=now;setS('mints','active',`Incremental: <b>${(p*100).toFixed(0)}%</b> · Block ${fromBlock.toLocaleString()}+${(p*newBlks).toFixed(0)} · <b>${n}</b> new events`,null,p);};
+        const incXfers=await Promise.all(LIUSD_EPOCHS.map(({addr})=>scanLogs(addr,[T_TFR],fromBlock,curBlock,(cB,eB,p,n)=>updI(p,n))));
+        const before=holders.size;
+        absorbTransferLogs(incXfers.flat(),holders);
+        const newFound=holders.size-before;
+        setS('mints','done',`${holders.size} total addresses (${newFound} new since block ${(adb.lastBlock||LAUNCH).toLocaleString()})`);
+
+        // Incremental PositionCreated
+        if(lcAddr){
+          setS('positions','active','Incremental PositionCreated scan…',null,0);
+          const newPc=await scanLogs(lcAddr,[T_PC],fromBlock,curBlock,(cB,eB,p,n)=>setS('positions','active',`${(p*100).toFixed(0)}% · ${n} new events`,null,p));
+          newPc.forEach(log=>{if(log.topics?.[2])addHolder(holders,'0x'+log.topics[2].slice(26));});
+          collectPcStarts(newPc).forEach((st,u)=>{if(!pcStarts.has(u)||st<pcStarts.get(u))pcStarts.set(u,st);});
+          setS('positions','done',`${pcStarts.size} wallets with lock history (${newPc.length} new events)`);
+        }else{setS('positions','skip','Skipped');}
+      }else{
+        setS('mints','done',`${holders.size} addresses loaded from database (up to date, no new blocks)`);
+        setS('positions','skip','Up to date');
+      }
+
+      // Unwinding — always full protocol fetch on refresh (not incremental chunks)
+      if(umAddr){
+        setS('unwinding','active','Refreshing all unwinding positions…',null,0);
+        unwindMap=await buildUnwindMap(umAddr,holders,curBlock);
+        setS('unwinding','done',`${unwindMap.size} active unwinding entries`);
+      }else{setS('unwinding','skip','Skipped');}
+
+      // (ADDR_DB updated at end, only if holders.size > 0)
+    }
+
+    // ── Stage 5: Balances ──
+    setS('balances','active',`Fetching exchange rates (${LIUSD_EPOCHS.length} durations)…`);
+    const ratesBn=await fetchAllRates(lcAddr);
+    const rates=Object.fromEntries(Object.entries(ratesBn).map(([k,v])=>[k,v.toString()]));
+
+    setS('balances','active',`Fetching balances for ${holders.size} addresses…`,null,0);
+    const hArr=[...holders];
+    const lockPositions=[];
+    for(let i=0;i<hArr.length;i+=20){
+      const batch=hArr.slice(i,i+20);
+      const bals=await Promise.all(batch.map(u=>Promise.all(LIUSD_EPOCHS.map(({addr})=>bE20(addr,u)))));
+      batch.forEach((u,j)=>{
+        const buckets={};let total=0;
+        LIUSD_EPOCHS.forEach(({ep,addr},k)=>{const v=s2u(bals[j][k],ratesBn[ep]);if(v>0.01){buckets[ep]=v;total+=v;}});
+        if(total>0.01)lockPositions.push({user:normAddr(u),buckets,total});
+      });
+      const done=i+20;
+      setS('balances','active',
+        `<b>${Math.min(done,hArr.length)}/${hArr.length}</b> addresses checked · <b>${lockPositions.length}</b> have liUSD`,
+        null,Math.min(done,hArr.length)/hArr.length);
+    }
+
+    // Unwinding balances (chunked — avoids RPC drops that caused missing M31 positions)
+    setS('balances','active',`Fetching ${unwindMap.size} unwinding balances (batched)…`);
+    await refreshM31Locks(lockPositions,ratesBn);
+    setS('balances','active','Fetching M31 unwinding positions (sequential on-chain)…');
+    const m31Unwind=await fetchM31UnwindingRetry(umAddr,curBlock);
+    setS('balances','active',`Fetching ${unwindMap.size} protocol unwinding balances…`);
+    let unwindPositions=injectM31Unwind(mergeUnwind(await unwindPositionsFromMap(umAddr,unwindMap)),m31Unwind);
+    const m31Snapshot=buildM31Snapshot(lockPositions,m31Unwind);
+    const totUw=unwindPositions.filter(p=>isReportable(p.unlockTs)).reduce((s,p)=>s+p.usd,0);
+    const m31Lbl=m31Snapshot.verified?'✓':'⚠';
+    setS('balances','done',`${lockPositions.length} wallet · ${unwindPositions.length} unwind (${fK(totUw)}) · M31 ${m31Lbl} ${fK(m31Snapshot.total)} PLF ${fK(m31Snapshot.plf)} (${m31Snapshot.unwindCount} pos)`);
+
+    // ── Stage 6: Build ──
+    setS('build','active','Fetching on-chain supply totals…');
+    const sb=await protocolSupplyUsd(ratesBn);
+    const supplyBreakdown={byEpoch:sb.byEpoch,total:sb.total};
+    const result={v:9,block:curBlock,lcAddr,umAddr,lockPositions,unwindPositions,m31Unwind,scannedCount:hArr.length,rates,pcStarts:Object.fromEntries(pcStarts),supplyBreakdown,m31Snapshot,scanSkips};
+    const skipWarn=scanSkips>0?` · ⚠ ${scanSkips} log chunks skipped`:'';
+    setS('build','done',`Protocol ${fK(sb.total+totUw)} · M31 ${fK(m31Snapshot.total)} · PLF ${fK(m31Snapshot.plf)}${m31Snapshot.verified?'':' ⚠ M31 incomplete'}${skipWarn}`);
+
+    // Save position data (only if meaningful results)
+    if(hArr.length>0 || lockPositions.length>0){
+      saveDB(POS_DB,result);
+    }
+    // Only save addr DB if we actually found addresses
+    if(holders.size>0){
+      saveDB(ADDR_DB,{v:3,lastBlock:curBlock,addresses:[...holders].map(normAddr),lcAddr,umAddr,pcStarts:Object.fromEntries(pcStarts)});
+    }
+    render(result);
+
+    // Update UI
+    const adb2=loadDB(ADDR_DB);
+    document.getElementById('ts-lbl').innerHTML=`Balances updated just now<br>Block ${curBlock.toLocaleString()}`;
+    if(adb2?.addresses?.length>0){
+      document.getElementById('db-banner').style.display='flex';
+      document.getElementById('db-txt').textContent=`📦 Address database: ${adb2.addresses.length} addresses · built ${fAge(adb2.ts)} · scanned to block ${curBlock.toLocaleString()}`;
+      document.getElementById('f-db').textContent=`${adb2.addresses.length} addrs`;
+    }
+    document.getElementById('btn-ref-bal').style.display='inline-block';
+    document.getElementById('btn-full').style.display='inline-block';
+
+    // Only auto-hide if we got real data; otherwise keep panel visible so user sees what happened
+    if(lockPositions.length>0||unwindPositions.length>0){
+      setTimeout(hideProg,4000);
+    }else{
+      setS('build','done',`⚠ Scan complete but 0 positions found. If this is wrong, open DevTools (F12) → Console for RPC errors, then click ⚠ Full Rescan.`);
+    }
+
+  }catch(e){
+    console.error('run() error:',e);
+    // Don't hide the panel — show error inside it so user can see what went wrong
+    setS('build','done',`❌ Error: ${e.message} — check DevTools console (F12) for details`);
+    document.getElementById('btn-ref-bal').style.display='inline-block';
+    document.getElementById('btn-full').style.display='inline-block';
+  }
+
+  running=false;btn.disabled=false;
+  document.getElementById('btn-spin').style.display='none';
+  document.getElementById('btn-lbl').textContent='⟳ Load';
+}
+
+// Build the per-token progress bars HTML
+function buildTokBars(mp,addrCount,curBlock,totalBlocks){
+  const toks=LIUSD_EPOCHS.map(({ep})=>{const t=mp['_'+ep]||{p:0,n:0};return{ep,p:t.p,n:t.n};});
+  const avg=toks.reduce((s,t)=>s+t.p,0)/Math.max(toks.length,1);
+  const blkScanned=Math.round(avg*totalBlocks);
+  const blkLeft=totalBlocks-blkScanned;
+  const top=toks.sort((a,b)=>b.n-a.n).slice(0,4);
+  const rows=top.map(t=>`<div class="tok-row"><div class="tok-lbl">liUSD-${t.ep}w</div><div class="tok-bar"><div class="tok-bar-fill" style="width:${(t.p*100).toFixed(0)}%"></div></div><div class="tok-cnt">${t.n} txfers</div></div>`).join('');
+  return`${rows}
+    <div style="margin-top:6px;font-size:11px;color:#475569">
+      📦 Blocks scanned: <b>${blkScanned.toLocaleString()}</b> / ${totalBlocks.toLocaleString()} &nbsp;·&nbsp; <b>${blkLeft.toLocaleString()}</b> remaining
+      &nbsp;&nbsp; 👥 Addresses found: <b style="color:#059669">${addrCount}</b>
+      &nbsp;·&nbsp; ${LIUSD_EPOCHS.length} token durations
+    </div>`;
+}
+
+// Startup: clear any empty/corrupt address database left from a failed scan
+(()=>{
+  try{
+    const adb=JSON.parse(localStorage.getItem(ADDR_DB)||'null');
+    if(adb && (adb.addresses?.length||0)===0){
+      localStorage.removeItem(ADDR_DB);
+      console.log('Cleared empty ADDR_DB from previous failed scan');
+    }
+    const pos=JSON.parse(localStorage.getItem(POS_DB)||'null');
+    if(pos && pos.v!==9){
+      localStorage.removeItem(POS_DB);
+      console.log('Cleared outdated POS_DB (v9 format)');
+    }
+  }catch(_){}
+})();
+
+run('load');
+</script>
+</body>
+</html>
