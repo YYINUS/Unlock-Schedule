@@ -91,6 +91,18 @@ tr:last-child td{border:none}tr:hover td{background:#fafcff}
 .quick-nav a:hover{background:#eff6ff;border-color:#93c5fd}
 .section-target{scroll-margin-top:12px}
 th.sort-hint{font-size:9px;color:#94a3b8;font-weight:500;text-transform:none;letter-spacing:0}
+.sched-note{padding:0 18px 10px;font-size:11px;color:#64748b;line-height:1.5}
+.sched-pos-btn{background:#eff6ff;border:1px solid #93c5fd;color:#1d4ed8;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit}
+.sched-pos-btn:hover{background:#dbeafe;border-color:#3b82f6}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:1000;align-items:flex-start;justify-content:center;padding:24px 16px;overflow-y:auto}
+.modal-panel{background:#fff;border-radius:14px;box-shadow:0 20px 50px rgba(0,0,0,.2);width:100%;max-width:920px;max-height:calc(100vh - 48px);overflow:hidden;display:flex;flex-direction:column}
+.modal-hdr{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #f1f5f9;flex-shrink:0}
+.modal-hdr h2{font-size:16px;font-weight:700;margin:0}
+.modal-close{background:#f1f5f9;border:none;border-radius:8px;width:32px;height:32px;font-size:16px;cursor:pointer;color:#64748b}
+.modal-close:hover{background:#e2e8f0;color:#1e293b}
+.modal-sub{padding:10px 20px 0;font-size:12px;color:#64748b;line-height:1.5}
+.modal-body-wrap{overflow:auto;padding:0 0 8px;flex:1}
+.modal-foot{padding:10px 20px 14px;border-top:1px solid #f1f5f9;font-size:11px;color:#94a3b8;flex-shrink:0}
 .footer{background:#0f172a;color:#64748b;font-size:11px;padding:12px 28px;display:flex;gap:20px;flex-wrap:wrap}
 .footer b{color:#cbd5e1}
 @media(max-width:1100px){.cards{grid-template-columns:repeat(3,1fr)}.ana-grid{grid-template-columns:repeat(2,1fr)}}
@@ -185,10 +197,10 @@ th.sort-hint{font-size:9px;color:#94a3b8;font-weight:500;text-transform:none;let
       <div class="sec-title">⏳ Unwinding Positions <span class="badge" id="badge-unwind">—</span></div>
       <div class="sec-nav" id="unwind-nav">—</div>
     </div>
-    <div style="padding:0 18px 8px;font-size:11px;color:#64748b">iUSD mid-unlock in UnwindingModule — top 20 by value. Positions unlocked &gt;7 days ago are hidden; card totals use full data.</div>
+    <div style="padding:0 18px 8px;font-size:11px;color:#64748b">iUSD mid-unlock in UnwindingModule — top 20 by value. Positions unlocked &gt;2 weeks ago are hidden; card totals use full data.</div>
     <table><thead><tr>
       <th>#</th><th>Address</th><th class="r">Value (USD) <span class="sort-hint">↓ value</span></th><th>Type</th>
-      <th>Lock Started</th><th>Unlock Date</th><th>Time Left</th><th>Status</th>
+      <th>Lock Started</th><th>Unlock Date (UTC)</th><th>Time Left</th><th>Status</th>
     </tr></thead><tbody id="unwind-body"><tr><td colspan="8" class="loading">Loading…</td></tr></tbody></table>
   </div>
 
@@ -200,11 +212,12 @@ th.sort-hint{font-size:9px;color:#94a3b8;font-weight:500;text-transform:none;let
     </div>
     <div class="chart-wrap">
       <div class="chart-legend">
-        <span><span class="ld" style="background:#3b82f6"></span>Upcoming unlock dates only</span>
-        <span style="color:#94a3b8;font-weight:400;font-size:10px">Today and future · past dates hidden</span>
+        <span><span class="ld" style="background:#3b82f6"></span>Unlock dates (past 2 weeks + upcoming)</span>
+        <span style="color:#94a3b8;font-weight:400;font-size:10px">Sunday 00:00 UTC · past 2 weeks + upcoming</span>
       </div>
       <div id="chart-svg-wrap"><div class="loading" id="chart-msg">Loading…</div></div>
     </div>
+    <div class="sched-note">Confirmed $ = live UnwindingModule balances for that unlock Sunday (drops to zero after withdraw on refresh). <b>Click a position count</b> to open the full address list with Etherscan links.</div>
     <table><thead><tr>
       <th>Unlock Date</th><th class="r">Confirmed ($)</th><th class="r">Positions</th><th class="r" colspan="3">Wallet-held / Notes</th><th>Buckets</th>
     </tr></thead><tbody id="sched-body"><tr><td colspan="7" class="loading">Loading…</td></tr></tbody></table>
@@ -237,6 +250,25 @@ th.sort-hint{font-size:9px;color:#94a3b8;font-weight:500;text-transform:none;let
     </div>
   </div>
 
+</div>
+
+<div id="sched-modal" class="modal-overlay" onclick="if(event.target===this)closeUnlockModal()">
+  <div class="modal-panel" role="dialog" aria-labelledby="modal-ttl">
+    <div class="modal-hdr">
+      <h2 id="modal-ttl">Unlock date</h2>
+      <button type="button" class="modal-close" onclick="closeUnlockModal()" title="Close">✕</button>
+    </div>
+    <div class="modal-sub" id="modal-sub">—</div>
+    <div class="modal-body-wrap">
+      <table>
+        <thead><tr>
+          <th>#</th><th>Address</th><th class="r">Amount (USD)</th><th>Bucket</th><th>Lock started</th><th>Verify on-chain</th>
+        </tr></thead>
+        <tbody id="modal-body"><tr><td colspan="6" class="loading">—</td></tr></tbody>
+      </table>
+    </div>
+    <div class="modal-foot" id="modal-foot">—</div>
+  </div>
 </div>
 
 <div class="footer">
@@ -276,12 +308,12 @@ const M31_ADDRS=Object.keys(KNOWN);
 const PLF_ADDR='0x4f5d9d62b17e2a5773e28cdf068d211fb5a0cc8c';
 const M31_PLF_MIN=1e6; // PLF on-chain unwinding is ~$1.53M — below $1M means incomplete fetch
 const REF_RATE_13W=1222358461638439800n; // on-chain fallback for 13w epoch rate (WAD)
-const EPOCH=604800, LAUNCH=0x1400000;
-const STALE_GRACE=7*86400; // hide positions unlocked more than 7 days ago
+const EPOCH=604800, EPOCH_OFFSET=259200, LAUNCH=0x1400000; // EpochLib: 1 week + 3d offset → Sunday 00:00 GMT turnovers
+const PAST_WINDOW=14*86400; // show unlock dates/positions from the past 2 weeks onward
 const BAL_BATCH=25; // parallel eth_call batch size (avoid RPC drops)
 const TOP_N=20; // max rows shown in wallet/unwinding tables (totals use full data)
 // Separate keys: ADDR_DB never expires; POS_DB is balance data
-const ADDR_DB='ifi_addr_v2', POS_DB='ifi_pos_v9';
+const ADDR_DB='ifi_addr_v2', POS_DB='ifi_pos_v10';
 
 const T_TFR='0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
 const T_PC ='0x92177e10bc6c212f7b3d2d410aa7c5ecd47b5a5588ec2b495e42c8b6e394f708';
@@ -512,17 +544,65 @@ const f2=v=>'$'+Number(v).toLocaleString('en-US',{minimumFractionDigits:2,maximu
 const fK=v=>{const n=Number(v);return n>=1e6?'$'+(n/1e6).toFixed(2)+'M':n>=1e3?'$'+(n/1e3).toFixed(1)+'K':f2(n);};
 function fTs(ts){if(ts==null||!Number.isFinite(ts)||ts<=0)return'—';const d=new Date(ts*1000);return isNaN(d.getTime())?'—':d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});}
 function fTsS(ts){if(ts==null||!Number.isFinite(ts)||ts<=0)return'—';const d=new Date(ts*1000);return isNaN(d.getTime())?'—':d.toLocaleDateString('en-US',{month:'short',day:'numeric'});}
-const fDate=fTs;const fDS=fTsS;
+function fTsUTC(ts){if(ts==null||!Number.isFinite(ts)||ts<=0)return'—';const d=new Date(ts*1000);return isNaN(d.getTime())?'—':d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric',timeZone:'UTC'});}
+function fTsSUTC(ts){if(ts==null||!Number.isFinite(ts)||ts<=0)return'—';const d=new Date(ts*1000);return isNaN(d.getTime())?'—':d.toLocaleDateString('en-US',{month:'short',day:'numeric',timeZone:'UTC'});}
+const fUnlock=fTsUTC; // unlock/maturity = Sunday 00:00 GMT epoch boundary
+const fDate=fUnlock;const fDS=fTsS;const fDSS=fTsSUTC;
 const short=a=>`${a.slice(0,6)}…${a.slice(-4)}`;
 const aLink=a=>`<a href="https://etherscan.io/address/${a}" target="_blank">${short(a)}</a>`;
+const umContractLink=um=>um?`https://etherscan.io/address/${um}#readContract`:'#';
+const umPosNftLink=(um,startTs)=>um?`https://etherscan.io/nft/${um}/${startTs}`:'#';
+const walletLink=u=>`https://etherscan.io/address/${u}`;
+const walletNftLink=u=>`https://etherscan.io/address/${u}#asset-nft`;
+function verifyLinks(p,umAddr){
+  if(!umAddr)return'—';
+  return`<a href="${walletLink(p.user)}" target="_blank" rel="noopener" title="Holder wallet on Etherscan">wallet ↗</a> · <a href="${walletNftLink(p.user)}" target="_blank" rel="noopener" title="ERC-1155 / NFT tab for this wallet">NFTs ↗</a> · <a href="${umPosNftLink(umAddr,p.startTs)}" target="_blank" rel="noopener" title="This unwind position (tokenId = start timestamp)">position ↗</a> · <a href="${umContractLink(umAddr)}" target="_blank" rel="noopener" title="Read balanceOf(wallet, ${p.startTs})">read balance ↗</a>`;
+}
+function schedModalRows(positions,umAddr,now){
+  return[...positions].sort(byValue).map((p,i)=>{
+    const lbl=KNOWN[normAddr(p.user)]?KNOWN[normAddr(p.user)][0]:'';
+    const ready=p.unlockTs<=now;
+    const verify=umAddr?verifyLinks(p,umAddr):'—';
+    return`<tr><td class="mu">${i+1}</td><td>${aLink(p.user)}${lbl?` <span class="klbl">${lbl}</span>`:''}</td><td class="r"><b>${f2(p.usd)}</b></td><td><span class="buck ${bkC(p.epochs)}">${bkN(p.epochs)}</span>${ready?' <span class="tag tg" style="font-size:9px">claimable</span>':''}</td><td>${fDS(p.startTs)}<br><span class="mu" style="font-size:10px">id ${p.startTs}</span></td><td>${verify}</td></tr>`;
+  }).join('');
+}
+let schedByDate={},schedMeta={umAddr:null,block:0};
+function openUnlockDate(ts){
+  const bundle=schedByDate[ts];
+  if(!bundle)return;
+  const now=nowSec();
+  const past=ts<now;
+  document.getElementById('modal-ttl').textContent='Unlock · '+fDate(ts)+(past?' (past)':'');
+  document.getElementById('modal-sub').innerHTML=`<b>${f2(bundle.usd)}</b> confirmed · <b>${bundle.pos.length}</b> position${bundle.pos.length!==1?'s':''} · Sunday 00:00 UTC${past?' · claimable until withdrawn':''}`;
+  document.getElementById('modal-body').innerHTML=schedModalRows(bundle.pos,schedMeta.umAddr,now)||'<tr><td colspan="6" class="loading">No positions</td></tr>';
+  const um=schedMeta.umAddr;
+  document.getElementById('modal-foot').innerHTML=um?`<b>How to verify:</b> Each row is an ERC-1155 position in the <a href="${umContractLink(um)}" target="_blank" rel="noopener">UnwindingModule</a> (${short(um)}). On the contract <b>Read</b> tab, call <code style="font-size:10px">balanceOf(wallet, tokenId)</code> using the wallet address and position id (start timestamp). The tracker amount ≈ that balance in iUSD. Block ${(schedMeta.block||0).toLocaleString()}. <span class="mu">Do not use the generic Token page — it shows $0 for ERC-1155.</span>`:'';
+  document.getElementById('sched-modal').style.display='flex';
+  document.body.style.overflow='hidden';
+  if(location.hash!=='unlock-'+ts)location.hash='unlock-'+ts;
+}
+function closeUnlockModal(){
+  document.getElementById('sched-modal').style.display='none';
+  document.body.style.overflow='';
+  if(/^#unlock-\d+$/.test(location.hash))history.replaceState(null,'',location.pathname+location.search);
+}
+function tryOpenUnlockHash(){
+  const m=location.hash.match(/^#unlock-(\d+)$/);
+  if(m&&schedByDate[Number(m[1])])openUnlockDate(Number(m[1]));
+  else if(m)closeUnlockModal();
+}
+window.addEventListener('hashchange',tryOpenUnlockHash);
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeUnlockModal();});
 const s2u=(s,r)=>Number(s*r/(10n**18n))/1e18;
 const r2u=r=>Number(r)/1e18; // UnwindingModule balance is iUSD (≈$1)
-const unlockTs=(st,ep)=>Number((BigInt(Math.floor(st))/BigInt(EPOCH)+1n+BigInt(ep))*BigInt(EPOCH));
+const epochNum=st=>{const t=BigInt(Math.floor(st))-BigInt(EPOCH_OFFSET);return t/BigInt(EPOCH);};
+const epochToTs=ep=>Number(BigInt(ep)*BigInt(EPOCH)+BigInt(EPOCH_OFFSET));
+const unlockTs=(st,ep)=>epochToTs(Number(epochNum(st)+1n+BigInt(ep)));
 const valTs=ts=>Number.isFinite(ts)&&ts>1e9;
 const normAddr=a=>(a||'').toLowerCase();
 const nowSec=()=>Math.floor(Date.now()/1000);
-const isReportable=ts=>ts>=nowSec()-STALE_GRACE; // hide if unlock >7 days ago
-const isUpcoming=ts=>ts>=nowSec(); // schedule/chart: today + future only
+const isReportable=ts=>ts>=nowSec()-PAST_WINDOW; // hide if unlock >2 weeks ago
+const isUpcoming=ts=>ts>=nowSec(); // forward-looking metrics only
 const isM31=u=>!!KNOWN[normAddr(u)];
 const byValue=(a,b)=>(b.total||b.usd||0)-(a.total||a.usd||0);
 function walletTotal(addr,lkRows,uwRows){
@@ -621,9 +701,9 @@ function drawChart(uwRows,walletLocked){
   const H=300,ML=72,MR=24,MT=18,MB=60,CW=W-ML-MR,CH=H-MT-MB;
   const now=nowSec();
   const cMap=new Map();
-  (uwRows||[]).filter(p=>valTs(p.unlockTs)&&isUpcoming(p.unlockTs)).forEach(p=>{const k=p.unlockTs;const e=cMap.get(k)||{usd:0,cnt:0,eps:[]};e.usd+=p.usd;e.cnt++;e.eps.push(p.epochs);cMap.set(k,e);});
+  (uwRows||[]).filter(p=>valTs(p.unlockTs)&&isReportable(p.unlockTs)).forEach(p=>{const k=p.unlockTs;const e=cMap.get(k)||{usd:0,cnt:0,eps:[]};e.usd+=p.usd;e.cnt++;e.eps.push(p.epochs);cMap.set(k,e);});
   const dates=[...cMap.keys()].filter(valTs).sort((a,b)=>a-b);
-  if(!dates.length){wrap.innerHTML=walletLocked>0?`<div class="loading">${fK(walletLocked)} in wallet locks — no upcoming unlock dates</div>`:'<div class="loading">No upcoming unlock dates (past dates hidden)</div>';return;}
+  if(!dates.length){wrap.innerHTML=walletLocked>0?`<div class="loading">${fK(walletLocked)} in wallet locks — no unlock dates in the past 2 weeks</div>`:'<div class="loading">No unlock dates in the past 2 weeks or upcoming</div>';return;}
   const maxV=Math.max(...dates.map(d=>cMap.get(d)?.usd||0),1);
   const yMax=niceMax(maxV),n=dates.length,slotW=CW/Math.max(n,1),bW=Math.max(Math.min(slotW*.4,28),3);
   let s=`<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:${H}px">`;
@@ -632,7 +712,7 @@ function drawChart(uwRows,walletLocked){
     const cx=ML+slotW*(i+0.5),c=cMap.get(date),past=date<now;
     if(c){const h=Math.max(2,c.usd/yMax*CH),y=MT+CH-h,bx=cx-bW/2;s+=`<rect x="${bx.toFixed(1)}" y="${y.toFixed(1)}" width="${bW.toFixed(1)}" height="${h.toFixed(1)}" fill="#3b82f6" opacity="${past?.4:1}" rx="2"><title>Confirmed Unlock\n${fDate(date)}\n${f2(c.usd)} · ${c.cnt} pos</title></rect>`;if(c.usd/yMax>0.06)s+=`<text x="${(bx+bW/2).toFixed(0)}" y="${(y-4).toFixed(0)}" text-anchor="middle" font-size="9" fill="#3b82f6" font-weight="600">${fK(c.usd)}</text>`;}
     const lx=cx,ly=H-MB+15,rot=n>6?-45:0,anch=n>6?'end':'middle';
-    s+=`<text x="${lx.toFixed(0)}" y="${ly}" text-anchor="${anch}" transform="rotate(${rot},${lx.toFixed(0)},${ly})" font-size="${n>10?8:9.5}" fill="#64748b" font-family="-apple-system,sans-serif">${fDS(date)}</text>`;
+    s+=`<text x="${lx.toFixed(0)}" y="${ly}" text-anchor="${anch}" transform="rotate(${rot},${lx.toFixed(0)},${ly})" font-size="${n>10?8:9.5}" fill="#64748b" font-family="-apple-system,sans-serif">${fDSS(date)}</text>`;
   });
   s+=`<line x1="${ML}" y1="${MT}" x2="${ML}" y2="${H-MB}" stroke="#e2e8f0" stroke-width="1.5"/><line x1="${ML}" y1="${H-MB}" x2="${W-MR}" y2="${H-MB}" stroke="#e2e8f0" stroke-width="1.5"/>`;
   if(dates.length>1){const tMin=dates[0],tMax=dates[dates.length-1];if(now>tMin&&now<tMax){const tx=(ML+(now-tMin)/(tMax-tMin)*CW).toFixed(1);s+=`<line x1="${tx}" y1="${MT}" x2="${tx}" y2="${H-MB}" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="4,3"/><text x="${(parseFloat(tx)+4).toFixed(0)}" y="${MT+11}" font-size="9" fill="#ef4444">Today</text>`;}}
@@ -681,17 +761,21 @@ function render(data){
     ?uwShow.map((p,i)=>{const tl=tLeft(p.unlockTs);const pct=tl.pct!==null?tl.pct:Math.min(100,Math.max(0,(now-p.startTs)/(p.unlockTs-p.startTs)*100));const lbl=KNOWN[normAddr(p.user)]?KNOWN[normAddr(p.user)][0]:'';const stag=tl.pct===100?`<span class="tag tg"><span class="dot"></span>Ready</span>`:tl.cls==='soon'?`<span class="tag ta"><span class="dot"></span>Soon</span>`:`<span class="tag tb"><span class="dot"></span>Unwinding</span>`;return`<tr><td class="mu">${i+1}</td><td>${aLink(p.user)}${lbl?`<span class="klbl">${lbl}</span>`:''}</td><td class="r"><span class="nv">${f2(p.usd)}</span></td><td><span class="buck ${bkC(p.epochs)}">${bkN(p.epochs)}</span></td><td>${fDS(p.startTs)}</td><td style="font-weight:600">${fDate(p.unlockTs)}</td><td><span class="cd ${tl.cls}">${tl.lbl}</span><div class="pbar-w"><div class="pbar${tl.pct===100?' done':''}" style="width:${pct.toFixed(0)}%"></div></div></td><td>${stag}</td></tr>`;}).join('')+tableFootnote(uwRows.length,uwShow.length,'unwinding positions',8)
     :'<tr><td colspan="8" class="loading">No active unwinding positions — click ⟳ Refresh Balances</td></tr>';
 
-  // Schedule — forward-looking dates only
+  // Schedule — past 2 weeks + upcoming unlock dates
   drawChart(uwRows,totWallet);
   const cMap=new Map();
-  uwUpcoming.forEach(p=>{const k=p.unlockTs;const e=cMap.get(k)||{usd:0,cnt:0,eps:new Set()};e.usd+=p.usd;e.cnt++;e.eps.add(p.epochs);cMap.set(k,e);});
+  uwRows.forEach(p=>{const k=p.unlockTs;const e=cMap.get(k)||{usd:0,cnt:0,eps:new Set(),pos:[]};e.usd+=p.usd;e.cnt++;e.eps.add(p.epochs);e.pos.push(p);cMap.set(k,e);});
   const allD=[...cMap.keys()].filter(valTs).sort((a,b)=>a-b);
   const totC=allD.reduce((s,k)=>s+(cMap.get(k)?.usd||0),0);
-  document.getElementById('sched-ttl').textContent=f2(totC)+' upcoming';
+  document.getElementById('sched-ttl').textContent=f2(totC)+' in window';
   document.getElementById('badge-sched').textContent=allD.length+' dates';
-  let schedRows=allD.map(k=>{const c=cMap.get(k);const eps=[...c.eps].sort((a,b)=>a-b);const tags=eps.map(e=>`<span class="buck ${bkC(e)}" style="font-size:9px">${bkN(e)}</span>`).join(' ');const soon=k<now+7*86400;return`<tr style="${soon?'background:#fffbeb':''}"><td><b>${fDate(k)}</b></td><td class="r"><b>${f2(c.usd)}</b></td><td class="r">${c.cnt}</td><td class="r" colspan="3"><span class="mu" style="font-size:11px">—</span></td><td>${tags}</td></tr>`;}).join('');
+  schedByDate={};allD.forEach(k=>{const c=cMap.get(k);schedByDate[k]={usd:c.usd,pos:[...c.pos],unlockTs:k};});
+  schedMeta={umAddr,block:block||0};
+  const umLnk=umAddr?`<a href="${umContractLink(umAddr)}" target="_blank" rel="noopener">${short(umAddr)}</a>`:short(umAddr||'—');
+  let schedRows=allD.map(k=>{const c=cMap.get(k);const eps=[...c.eps].sort((a,b)=>a-b);const tags=eps.map(e=>`<span class="buck ${bkC(e)}" style="font-size:9px">${bkN(e)}</span>`).join(' ');const past=k<now;const soon=!past&&k<now+7*86400;return`<tr style="${past?'opacity:.9':soon?'background:#fffbeb':''}"><td><b>${fDate(k)}</b>${past?'<br><span style="font-size:10px;color:#94a3b8">past · claimable until withdrawn</span>':''}</td><td class="r"><b>${f2(c.usd)}</b></td><td class="r"><button type="button" class="sched-pos-btn" onclick="openUnlockDate(${k})">${c.cnt} position${c.cnt!==1?'s':''} →</button></td><td class="r" colspan="3"><span class="mu" style="font-size:10px">UM ${umLnk}</span></td><td>${tags}</td></tr>`;}).join('');
   if(totWallet>0.01)schedRows+=`<tr style="background:#f8fafc"><td><b>Wallet-held locks</b><br><span style="font-size:10px;color:#64748b">On-chain liUSD supply (unlock not started)</span></td><td class="r"><span class="mu">—</span></td><td class="r"><span class="mu">—</span></td><td class="r" colspan="3"><b style="color:#2563eb">${f2(totWallet)}</b> <span style="font-size:10px;color:#64748b">(${lkRows.length} holders in scan${totLkScanned<totWallet*0.97?`, scanned ${fK(totLkScanned)}`:''})</span></td><td><span class="buck bx">mixed</span></td></tr>`;
   document.getElementById('sched-body').innerHTML=schedRows||'<tr><td colspan="7" class="loading">No scheduled unlock dates</td></tr>';
+  tryOpenUnlockHash();
 
   // Summary cards — supply + unwinding (burned liUSD tracked separately in UnwindingModule)
   document.getElementById('c-locked').textContent=f2(totWallet);
@@ -743,7 +827,7 @@ async function run(mode){
   // 'load': use POS_DB if fresh, else fallback to 'refresh'
   if(mode==='load'){
     const pos=loadDB(POS_DB);
-    if(pos?.v===9){
+    if(pos?.v===10){
       if(pos.activeDetails)delete pos.activeDetails;
       const ageMin=Math.round((Date.now()-pos.ts)/60000);
       const adb=loadDB(ADDR_DB);
@@ -947,7 +1031,7 @@ async function run(mode){
     setS('build','active','Fetching on-chain supply totals…');
     const sb=await protocolSupplyUsd(ratesBn);
     const supplyBreakdown={byEpoch:sb.byEpoch,total:sb.total};
-    const result={v:9,block:curBlock,lcAddr,umAddr,lockPositions,unwindPositions,m31Unwind,scannedCount:hArr.length,rates,pcStarts:Object.fromEntries(pcStarts),supplyBreakdown,m31Snapshot,scanSkips};
+    const result={v:10,block:curBlock,lcAddr,umAddr,lockPositions,unwindPositions,m31Unwind,scannedCount:hArr.length,rates,pcStarts:Object.fromEntries(pcStarts),supplyBreakdown,m31Snapshot,scanSkips};
     const skipWarn=scanSkips>0?` · ⚠ ${scanSkips} log chunks skipped`:'';
     setS('build','done',`Protocol ${fK(sb.total+totUw)} · M31 ${fK(m31Snapshot.total)} · PLF ${fK(m31Snapshot.plf)}${m31Snapshot.verified?'':' ⚠ M31 incomplete'}${skipWarn}`);
 
@@ -1017,9 +1101,9 @@ function buildTokBars(mp,addrCount,curBlock,totalBlocks){
       console.log('Cleared empty ADDR_DB from previous failed scan');
     }
     const pos=JSON.parse(localStorage.getItem(POS_DB)||'null');
-    if(pos && pos.v!==9){
+    if(pos && pos.v!==10){
       localStorage.removeItem(POS_DB);
-      console.log('Cleared outdated POS_DB (v9 format)');
+      console.log('Cleared outdated POS_DB (v10 format)');
     }
   }catch(_){}
 })();

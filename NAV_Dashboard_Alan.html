@@ -344,8 +344,11 @@ async function getUnwindingModule(rpcs,lcAddr){
 // Returns array of {startTs, epochs, receiptTokens0} objects.
 // event topic: 898a174703345948bd8be8a22a0b81b1254483d955a1815cd000eec8271afc06
 // = keccak256("UnwindingStarted(uint256,address,uint256,uint32,uint256)")
-// EpochLib epoch duration = 1 week = 604800 seconds
+// EpochLib: 1 week + 3-day offset → epoch turnovers at Sunday 00:00 GMT
 const EPOCH_DUR = 604800n;
+const EPOCH_OFFSET = 259200n;
+const epochNum = ts => (BigInt(ts) - EPOCH_OFFSET) / EPOCH_DUR;
+const epochToTs  = ep => Number(ep * EPOCH_DUR + EPOCH_OFFSET);
 async function getUnwindingPositions(rpcs,umAddr,walletAddr){
   const TOPIC='0x898a174703345948bd8be8a22a0b81b1254483d955a1815cd000eec8271afc06';
   const FROM='0x1400000'; // InfiniFi launched ~block 20971520 (Nov 2025)
@@ -365,10 +368,10 @@ async function getUnwindingPositions(rpcs,umAddr,walletAddr){
         const startTs      = BigInt(log.topics[1]);
         const receiptTokens0 = BigInt('0x'+d.slice(64,128));
         const epochs       = Number(BigInt('0x'+d.slice(128,192)));
-        // maturity: toEpoch * EPOCH_DUR where toEpoch = (startTs/EPOCH_DUR + 1) + epochs
-        const fromEpoch    = startTs/EPOCH_DUR + 1n;
+        // UnwindingModule: fromEpoch = nextEpoch(startTs), toEpoch = fromEpoch + epochs
+        const fromEpoch    = epochNum(startTs) + 1n;
         const toEpoch      = fromEpoch + BigInt(epochs);
-        const maturityTs   = toEpoch * EPOCH_DUR;
+        const maturityTs   = BigInt(epochToTs(Number(toEpoch)));
         positions.push({startTs, epochs, receiptTokens0, maturityTs});
       }
       // sort oldest first
